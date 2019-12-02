@@ -1,0 +1,105 @@
+rect.evenChecker {
+	fill:BlanchedAlmond;
+	stroke:Black;
+	stroke-width:4;
+}
+
+rect.oddChecker {
+	fill:GoldenRod;
+	stroke-width:4;
+	stroke:Black;
+}
+
+rect.domino {
+    fill: White;
+    stroke: Black;
+    stroke-width: 5;
+}
+
+.bluePiece {
+	fill:Blue;
+	stroke-width:6;
+	stroke:Black;
+}
+
+.yellowPiece {
+	fill:Yellow;
+	stroke-width:6;
+	stroke:Black;
+}
+
+.redPiece {
+	fill:Red;
+	stroke-width:6;
+	stroke:Black;
+}
+
+.greenPiece {
+	fill:Lime;
+	stroke-width:6;
+	stroke:Black;
+}
+
+.whitePiece {
+	fill:White;
+	stroke-width:6;
+	stroke:Black;
+}
+
+h1 {
+    text-align: center;
+}
+h2 {
+    text-align: center;
+}
+
+h5 {
+    text-align: center;
+}
+
+div#gameControls {
+    font-size: medium;
+    float: left;
+    /*width: 300px; */
+}
+
+/* TODO: replace with optionTitle. */
+.controlTitle {
+    font-size: medium;
+    text-align: center;
+    font-weight: bold;
+}
+
+.optionTitle {
+    font-size: medium;
+    text-align: center;
+    font-weight: bold;
+}
+
+.gameOption {
+    background-color:#F8F8F8;
+    margin: 5px;
+    border: 1px solid black;
+    border-radius: 10px;
+    width: 230px;
+    padding: 5px;
+}
+
+.gameBoard {
+    margin: 10px;
+    vertical-align: top;
+    /*float: right;*/
+}
+
+.centered {
+    text-align: center;
+}
+
+#rules {
+    text-align: left;
+    font-size: 10pt;
+}
+
+
+
+
