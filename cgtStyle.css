@@ -10,11 +10,33 @@ rect.oddChecker {
 	stroke:Black;
 }
 
+rect.connectFour {
+	fill: lightsteelblue;
+	/* border-color: Blue; */
+	stroke-width:4;
+	stroke:Blue;
+}
+
 rect.domino {
     fill: White;
     stroke: Black;
     stroke-width: 5;
 }
+
+circle.piece {
+	/* fill: Yellow; */
+    stroke: Black;
+    stroke-width: 5;
+}
+
+circle.yellow {
+	fill: Yellow;
+}
+
+circle.red {
+	fill: Red;
+}
+
 
 .bluePiece {
 	fill:Blue;
@@ -30,6 +52,18 @@ rect.domino {
 
 .redPiece {
 	fill:Red;
+	stroke-width:6;
+	stroke:Black;
+}
+
+.grayPiece {
+	fill:Gray;
+	stroke-width:6;
+	stroke:Black;
+}
+
+.blackPiece {
+	fill:Black;
 	stroke-width:6;
 	stroke:Black;
 }
@@ -99,7 +133,3 @@ div#gameControls {
     text-align: left;
     font-size: 10pt;
 }
-
-
-
-
