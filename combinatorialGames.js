@@ -1,6 +1,6 @@
 /**
  * Contains Classes and functions for use with Combinatorial Games.
- * 
+ *
  * author: Kyle George Burke
  * This software is licensed under the MIT License:
 The MIT License (MIT)
@@ -37,33 +37,35 @@ SOFTWARE.
  *   * must have a playerNames field.  E.g. ["Left", "Right"]
  */
 var CombinatorialGame = Class.create({
-    
+
     /**
      * Determines whether the given player has an option
      */
     hasOption: function(player, position) {
         var options = this.getOptionsForPlayer(player);
+        // console.log("Player " + player + " has " + options.length + " options.");
         for (var i = 0; i < options.length; i++) {
+            // console.log("The option is: " + options[i]);
             if (position.equals(options[i])) return true;
         }
         return false;
     }
-    
+
     ,/**
      * Returns the canonical form of this game, which must be equivalent.  This should be implemented in subclasses to improve performance for dynamic-programming AIs I haven't written yet. :-P
      */
     canonize: function() {
         return this.clone();
     }
-    
+
     ,/**
      * Gets the player's identity (Blue/Black/Vertical/etc) as a string.
      */
     getPlayerName: function(playerIndex) {
         return this.playerNames[playerIndex];
     }
-    
-    
+
+
 });
 //declare constants
 CombinatorialGame.prototype.LEFT = 0;
@@ -75,7 +77,7 @@ CombinatorialGame.prototype.PLAYER_NAMES = ["Left", "Right"];
 var GridDistanceGame = Class.create(CombinatorialGame, {
 
     /**
-     * Constructor.  
+     * Constructor.
      */
     initialize: function(height, width, sameDistances, differentDistances, blueLocations, redLocations) {
         this.sameDistances = sameDistances;
@@ -85,7 +87,7 @@ var GridDistanceGame = Class.create(CombinatorialGame, {
         this.height = height;
         this.width = width;
     }
-    
+
     /**
      * Checks that the piece positions are legal.
      */
@@ -110,16 +112,16 @@ var GridDistanceGame = Class.create(CombinatorialGame, {
         //check that the reds are legal
         return true;
     }
-    
+
 }); //end of GridDistanceGame class
 
 /**
  * Class for Atropos ruleset.
  */
 var Atropos = Class.create(CombinatorialGame, {
-    
+
     /**
-     * Constructor.  
+     * Constructor.
      */
     initialize: function(sideLength, lastPlay, filledCirclesAndColors) {
         this.playerNames = ["Left", "Right"];
@@ -134,13 +136,16 @@ var Atropos = Class.create(CombinatorialGame, {
         filledCirclesAndColors = filledCirclesAndColors || [];
         this.filledCircles = [];
         for (var i = 0; i < filledCirclesAndColors.length; i++) {
+            // console.log(filledCirclesAndColors);
             var circle = filledCirclesAndColors[i];
+            // console.log("circle: " + circle);
             if (circle[2] != Atropos.prototype.UNCOLORED) {
+                // console.log("Circle array thing: " + [circle[0], circle[1], circle[2]]);
                 this.filledCircles.push([circle[0], circle[1], circle[2]]);
             }
         }
     }
-    
+
     /**
      * Returns the starting colors based on this.sideLength.
      */
@@ -150,7 +155,7 @@ var Atropos = Class.create(CombinatorialGame, {
         for (var column = 1; column < this.sideLength + 2; column ++) {
             var row = 0;
             var possibleColors = [Atropos.prototype.YELLOW, Atropos.prototype.BLUE];
-            startingCircles.push([row, column, possibleColors[column % 2]]); 
+            startingCircles.push([row, column, possibleColors[column % 2]]);
         }
         //left hand side: blue and red
         for (var row = 1; row < this.sideLength + 2; row ++) {
@@ -166,7 +171,7 @@ var Atropos = Class.create(CombinatorialGame, {
         }
         return startingCircles;
     }
-    
+
     /**
      * Returns the color of a circle.
      */
@@ -179,14 +184,14 @@ var Atropos = Class.create(CombinatorialGame, {
         }
         return Atropos.prototype.UNCOLORED;
     }
-    
+
     /**
      * Returns whether a circle is colored.
      */
     ,isColored: function(row, column) {
         return this.getCircleColor(row, column) != 3;
     }
-    
+
     /**
      * Equals!
      */
@@ -194,10 +199,10 @@ var Atropos = Class.create(CombinatorialGame, {
         if (this.sideLength != other.sideLength) {
             return false;
         }
-        if ((this.lastPlay == null && other.lastPlay != null) || 
+        if ((this.lastPlay == null && other.lastPlay != null) ||
             (this.lastPlay != null && other.lastPlay == null) ||
-            (this.lastPlay != null && other.lastPlay != null && 
-             (this.lastPlay[0] != other.lastPlay[0] || 
+            (this.lastPlay != null && other.lastPlay != null &&
+             (this.lastPlay[0] != other.lastPlay[0] ||
               this.lastPlay[1] != other.lastPlay[1]))) {
             return false;
         }
@@ -215,14 +220,14 @@ var Atropos = Class.create(CombinatorialGame, {
         }
         return true;
     }
-    
+
     /**
      * Clone!
      */
     ,clone: function() {
         return new Atropos(this.sideLength, this.lastPlay, this.filledCircles);
     }
-    
+
     /**
      * Gets any colors that can't be played adjacent to the two given circle locations.
      */
@@ -233,10 +238,10 @@ var Atropos = Class.create(CombinatorialGame, {
             if (colorA != colorB) {
                 return [3 - (colorA + colorB)];
             }
-        } 
+        }
         return [];
     }
-    
+
     /**
      * Gets an ordered list of the 6 coordinates around a given point.
      */
@@ -250,7 +255,7 @@ var Atropos = Class.create(CombinatorialGame, {
         neighbors.push([row + 1, column]);
         return neighbors;
     }
-    
+
     /**
      * Returns whether a location is surrounded by colored spaces.
      */
@@ -264,14 +269,14 @@ var Atropos = Class.create(CombinatorialGame, {
         }
         return true;
     }
-    
+
     /**
      * Returns whether the next play is a jump.
      */
     ,nextIsJump: function() {
         return this.lastPlay == null || this.isSurrounded(this.lastPlay[0], this.lastPlay[1]);
     }
-    
+
     /**
      * Gets any colors that can't be played a certain location.
      */
@@ -292,7 +297,7 @@ var Atropos = Class.create(CombinatorialGame, {
         console.log("illegal colors at (" + row + ", " + column + "): " + illegalColors);
         return illegalColors;
     }
-    
+
     /**
      * Gets any colors that can be played at a location.
      */
@@ -307,7 +312,7 @@ var Atropos = Class.create(CombinatorialGame, {
         }
         return legalColors;
     }
-    
+
     //override
     ,getOptionsForPlayer: function(playerId) {
         var options = [];
@@ -324,7 +329,7 @@ var Atropos = Class.create(CombinatorialGame, {
         }
         return options;
     }
-    
+
     /**
      * Returns a move option with an added circle.  Does not check that this isn't already colored!
      */
@@ -334,7 +339,7 @@ var Atropos = Class.create(CombinatorialGame, {
         clone.lastPlay = [row, column];
         return clone;
     }
-    
+
     /**
      * Returns the options around a point.
      */
@@ -346,7 +351,7 @@ var Atropos = Class.create(CombinatorialGame, {
         }
         return options;
     }
-    
+
     /**
      * Returns an array of all the options at a specific row and column.
      */
@@ -360,24 +365,24 @@ var Atropos = Class.create(CombinatorialGame, {
         }
         return options;
     }
-    
-}); 
+
+});
 //Some Atropos constants
 Atropos.prototype.RED = 0;
 Atropos.prototype.BLUE = 1;
 Atropos.prototype.YELLOW = 2;
 Atropos.prototype.UNCOLORED = 3;
 //end of Atropos class
-    
+
 
 var InteractiveAtroposView = Class.create({
-    
+
     initialize: function(position) {
         this.position = position;
         this.selectedElement = undefined;
         this.popup = null;
     }
-    
+
     /**
      * Draws the checker board and assigns the listener
      */
@@ -388,7 +393,7 @@ var InteractiveAtroposView = Class.create({
         }
         var svgNS = "http://www.w3.org/2000/svg";
         var boardSvg = document.createElementNS(svgNS, "svg");
-        //now add the new board to the container 
+        //now add the new board to the container
         containerElement.appendChild(boardSvg);
         var boardPixelSize = Math.min(window.innerHeight, window.innerWidth - 200);
         //var boardPixelSize = 10 + (this.position.sideLength + 4) * 100
@@ -398,13 +403,13 @@ var InteractiveAtroposView = Class.create({
         var boxSide = boardPixelSize / (n+1);
         console.log("boxSide: " + boxSide);
         var circleRadius = (boxSide - 10)/2;
-        
+
         //draw the circles
         for (var row = this.position.sideLength + 1; row >= 0; row --) {
             for (var column = Math.max(0, 1-row); column < n+1 - Math.max(row, 1); column ++) {
                 var colorInt = this.position.getCircleColor(row, column);
                 var circle = document.createElementNS(svgNS, "circle");
-                circle.row = row; 
+                circle.row = row;
                 circle.column = column;
                 circle.setAttributeNS(null, "cx", (column * boxSide) + (row * boxSide/2) + boxSide/2);
                 circle.setAttributeNS(null, "cy", ((n - row) * boxSide));
@@ -424,7 +429,7 @@ var InteractiveAtroposView = Class.create({
                     if (listener != undefined) {
                         var player = listener;
                         circle.onclick = function(event) {
-                            console.log("clicked on: (" + event.target.row + ", " + event.target.column + ")"); 
+                            console.log("clicked on: (" + event.target.row + ", " + event.target.column + ")");
                             player.handleClick(event);
                         };
                     }
@@ -433,7 +438,7 @@ var InteractiveAtroposView = Class.create({
             }
         }
     }
-    
+
     /**
      * Handles a mouse click.
      * @param currentPlayer  The index for the player, not the player object.
@@ -451,7 +456,7 @@ var InteractiveAtroposView = Class.create({
             player.sendMoveToRef(self.position.getOptionWith(event.target.row, event.target.column, Atropos.prototype.RED));
         };
         this.popup.appendChild(redButton);
-    
+
         var blueButton = document.createElement("button");
         blueButton.appendChild(toNode("Blue"));
         blueButton.onclick = function() {
@@ -459,7 +464,7 @@ var InteractiveAtroposView = Class.create({
             player.sendMoveToRef(self.position.getOptionWith(event.target.row, event.target.column, Atropos.prototype.BLUE));
         };
         this.popup.appendChild(blueButton);
-    
+
         var yellowButton = document.createElement("button");
         yellowButton.appendChild(toNode("Yellow"));
         yellowButton.onclick = function() {
@@ -467,7 +472,7 @@ var InteractiveAtroposView = Class.create({
             player.sendMoveToRef(self.position.getOptionWith(event.target.row, event.target.column, Atropos.prototype.YELLOW));
         };
         this.popup.appendChild(yellowButton);
-    
+
         this.popup.style.position = "fixed";
         this.popup.style.display = "block";
         this.popup.style.opacity = 1;
@@ -479,7 +484,7 @@ var InteractiveAtroposView = Class.create({
         return null;
         //}
     }
-    
+
     /**
      * Destroys the popup color window.
      */
@@ -502,21 +507,21 @@ var InteractiveAtroposViewFactory = Class.create({
     initialize: function() {
         //do nothing
     }
-    
+
     /**
      * Returns an interactive view
      */
     ,getInteractiveBoard: function(position) {
         return new InteractiveAtroposView(position);
     }
-    
+
     ,/**
      * Returns a view.
      */
     getView: function(position) {
         return this.getInteractiveBoard(position);
     }
-    
+
 }); //end of InteractiveAtroposViewFactory
 
 //end of Atropos stuff!
@@ -549,7 +554,7 @@ function newButtonsAndScissorsGame() {
     var players = [playerOptions[leftPlayer], playerOptions[rightPlayer]];
     var ref = new Referee(game, players, viewFactory, "buttonsAndScissorsBoard", $('messageBox'), controlForm);
 }
-    
+
 
 /**
  * Buttons and Scissors ruleset.
@@ -567,7 +572,7 @@ var ButtonsAndScissors = Class.create(CombinatorialGame, {
         this.buttons = buttons || [];
         this.blocks = blocks || [];
     }
-    
+
     /**
      * Returns whether there is a block at coordinates.
      */
@@ -578,7 +583,7 @@ var ButtonsAndScissors = Class.create(CombinatorialGame, {
         }
         return false;
     }
-    
+
     /**
      * Gets the button color at a location.  Returns -1 if there's no button there.
      */
@@ -591,7 +596,7 @@ var ButtonsAndScissors = Class.create(CombinatorialGame, {
         }
         return -1;
     }
-    
+
     /**
      * Returns whether there is a button of a specific color at a position.
      */
@@ -602,7 +607,7 @@ var ButtonsAndScissors = Class.create(CombinatorialGame, {
         }
         return false;
     }
-    
+
     /**
      * Adds random buttons.
      */
@@ -623,12 +628,12 @@ var ButtonsAndScissors = Class.create(CombinatorialGame, {
             buttonColors.push(2);
             j++;
         }
-        
+
         this.buttons = [];
         for (var i = 0; i < this.colors.length; i++) {
             this.buttons.push([]);
         }
-        
+
         while (buttonColors.length > 0) {
             var row = Math.floor(Math.random() * this.height);
             var column = Math.floor(Math.random() * this.width);
@@ -649,7 +654,7 @@ var ButtonsAndScissors = Class.create(CombinatorialGame, {
             }
         }*/
     }
-    
+
     /**
      * Adds random blocks.
      */
@@ -663,7 +668,7 @@ var ButtonsAndScissors = Class.create(CombinatorialGame, {
             }
         }
     }
-    
+
     /**
      * equals
      */
@@ -676,7 +681,7 @@ var ButtonsAndScissors = Class.create(CombinatorialGame, {
                 if (!other.hasButtonAt(button[0], button[1], color)) return false;
             }
         }
-        
+
         //check that other has all the blocks
         for (var i = 0; i < this.blocks.length; i++) {
             var block = this.blocks[i];
@@ -684,7 +689,7 @@ var ButtonsAndScissors = Class.create(CombinatorialGame, {
         }
         return true;
     }
-    
+
     /**
      * clone
      */
@@ -704,7 +709,7 @@ var ButtonsAndScissors = Class.create(CombinatorialGame, {
         }
         return new ButtonsAndScissors(this.width, this.height, buttonsCopy, blocksCopy);
     }
-    
+
     /**
      * Determines whether two buttons can be cut.
      */
@@ -732,7 +737,7 @@ var ButtonsAndScissors = Class.create(CombinatorialGame, {
         }
         return true;
     }
-    
+
     /**
      * Removes a button.  Precondition: button must be here!
      */
@@ -745,7 +750,7 @@ var ButtonsAndScissors = Class.create(CombinatorialGame, {
         //console.log("cutting " + i + "th button: [" + row + ", " + column + "]");
         this.buttons[colorIndex] = this.buttons[colorIndex].slice(0, i).concat(this.buttons[colorIndex].slice(i+1));
     }
-    
+
     /**
      * Gets the option from a single cut.  Precondition: assumes the cut can be made.
      */
@@ -766,7 +771,7 @@ var ButtonsAndScissors = Class.create(CombinatorialGame, {
         //copy.removeButton(x, y, color);
         return copy;
     }
-    
+
     /**
      * getOptionsForPlayer
      */
@@ -788,12 +793,12 @@ var ButtonsAndScissors = Class.create(CombinatorialGame, {
 }); //end of ButtonsAndScissors
 
 var InteractiveButtonsAndScissorsView = Class.create({
-    
+
     initialize: function(position) {
         this.position = position;
         this.selectedPiece = undefined;
     }
-    
+
     /**
      * Draws the checker board and assigns the listener
      */
@@ -804,12 +809,12 @@ var InteractiveButtonsAndScissorsView = Class.create({
         }
         var svgNS = "http://www.w3.org/2000/svg";
         var boardSvg = document.createElementNS(svgNS, "svg");
-        //now add the new board to the container 
+        //now add the new board to the container
         containerElement.appendChild(boardSvg);
-        
+
         boardSvg.setAttributeNS(null, "width", 10 + this.position.width * 100);
         boardSvg.setAttributeNS(null, "height", 10 + this.position.height * 100);
-        
+
         //draw the checker tiles
         for (var i = 0; i < this.position.width; i++) {
             for (var j = 0; j < this.position.height; j++) {
@@ -824,10 +829,10 @@ var InteractiveButtonsAndScissorsView = Class.create({
                 checkerTile.setAttributeNS(null, "height", "100");
                 checkerTile.setAttributeNS(null, "class", parityString + "Checker");
                 boardSvg.appendChild(checkerTile);
-                
+
             }
         }
-        
+
         //draw the buttons
         for (var colorIndex = 0; colorIndex < this.position.buttons.length; colorIndex++) {
             for (var i = 0; i < this.position.buttons[colorIndex].length; i++) {
@@ -848,7 +853,7 @@ var InteractiveButtonsAndScissorsView = Class.create({
                 boardSvg.appendChild(svgButton);
             }
         }
-        
+
         //TODO: draw the blocks
         for (var i = 0; i < this.position.blocks.length; i++) {
             var block = this.position.blocks[i];
@@ -862,7 +867,7 @@ var InteractiveButtonsAndScissorsView = Class.create({
             //TODO: don't append it yet.  Also, need to set the class.
         }
     }
-    
+
     /**
      * Selects a piece.
      */
@@ -870,20 +875,20 @@ var InteractiveButtonsAndScissorsView = Class.create({
         this.selectedPiece = piece;
         this.selectedPiece.style.stroke = "Purple";
     }
-    
+
     /**
      * Deselect piece.
      */
     ,deselectPiece: function() {
         if (this.selectedPiece != undefined) {
-            this.selectedPiece.style.stroke = "Black";
+            this.selectedPiece.style.stroke = "Blue";
             this.selectedPiece = undefined;
         }
     }
-    
+
     /**
      *  Gets the next position using piece locations.
-     */ 
+     */
     ,getNextPositionFromPieceLocations: function(firstPiece, secondPiece, containerElement) {
         var buttonA = firstPiece.modelData;
         var buttonB = secondPiece.modelData;
@@ -895,8 +900,8 @@ var InteractiveButtonsAndScissorsView = Class.create({
             this.deselectPiece();
             return null;
         }
-    } 
-    
+    }
+
     /**
      * Handles a mouse click.
      */
@@ -934,22 +939,375 @@ var InteractiveButtonsAndScissorsViewFactory = Class.create({
     initialize: function() {
         //do nothing
     }
-    
+
     /**
      * Returns an interactive view
      */
     ,getInteractiveBoard: function(position) {
         return new InteractiveButtonsAndScissorsView(position);
     }
-    
+
     ,/**
      * Returns a view.
      */
     getView: function(position) {
         return this.getInteractiveBoard(position);
     }
-    
+
 }); //end of InteractiveButtonsAndScissorsViewFactory
+
+/**
+ * Class for ConnectFour ruleset.
+ */
+var ConnectFour = Class.create(CombinatorialGame, {
+    /**
+     * Constructor.
+     */
+    initialize: function(width, height, blockers) {
+        this.blocks = [new Array(), new Array()];
+        blockers = blockers || [new Array(), new Array()];
+        for(var playerId = 0; playerId < blockers.length; playerId++) {
+            for (var i = 0; i < blockers[playerId].length; i++) {
+                var block = blockers[playerId][i];
+                this.blocks[playerId].push([block[0], block[1]]);
+            }
+        }
+        this.playerNames = ["Yellow", "Red"];
+        this.width = width;
+        this.height = height;
+    }
+
+    ,/**
+     * toString
+     */
+    toString: function() {
+        for (var i = 0; i < this.blocks.length; i++) {
+            if(i == 0) {
+                string = "Yellow player currently has blocks at: ";
+            }
+            else {
+                string = "Red player currently has blocks at: ";
+            }
+            for (var j = 0; j < this.blocks[i].length; j++) {
+                string += this.blocks[i][j] + ",";
+            }
+        }
+    }
+
+    ,/**
+     * Returns the move options.
+     */
+    getOptionsForPlayer: function(playerId) {
+        var moves = new Array();
+
+        var numberOfBlocks = this.blocks[0].length + this.blocks[1].length;
+        for (var player = 0; player < 2; player++) {
+            for (var blockNumber = 0; blockNumber < this.blocks[player].length; blockNumber++) {
+                var blockX = this.blocks[player][blockNumber][0];
+                var blockY = this.blocks[player][blockNumber][1];
+                var threeToTheRight = 0;
+                if (this.indexOf(this.blocks[player], [blockX+1, blockY]) != -1) {
+                    threeToTheRight++;
+                }
+                if (this.indexOf(this.blocks[player], [blockX+2, blockY]) != -1) {
+                    threeToTheRight++;
+                }
+                if (this.indexOf(this.blocks[player], [blockX+3, blockY]) != -1) {
+                    threeToTheRight++;
+                }
+                if(threeToTheRight == 3) {
+                    return moves;
+                }
+
+                var threeGoingDown = 0;
+                if (this.indexOf(this.blocks[player], [blockX, blockY+1]) != -1) {
+                    threeGoingDown++;
+                }
+                if (this.indexOf(this.blocks[player], [blockX, blockY+2]) != -1) {
+                    threeGoingDown++;
+                }
+                if (this.indexOf(this.blocks[player], [blockX, blockY+3]) != -1) {
+                    threeGoingDown++;
+                }
+                if(threeGoingDown == 3) {
+                    return moves;
+                }
+
+                var threeGoingUpDiagonally = 0;
+                if (this.indexOf(this.blocks[player], [blockX+1, blockY-1]) != -1) {
+                    threeGoingUpDiagonally++;
+                }
+                if (this.indexOf(this.blocks[player], [blockX+2, blockY-2]) != -1) {
+                    threeGoingUpDiagonally++;
+                }
+                if (this.indexOf(this.blocks[player], [blockX+3, blockY-3]) != -1) {
+                    threeGoingUpDiagonally++;
+                }
+                if(threeGoingUpDiagonally == 3) {
+                    return moves;
+                }
+
+                var threeGoingDownDiagonally = 0;
+                if (this.indexOf(this.blocks[player], [blockX+1, blockY+1]) != -1) {
+                    threeGoingDownDiagonally++;
+                }
+                if (this.indexOf(this.blocks[player], [blockX+2, blockY+2]) != -1) {
+                    threeGoingDownDiagonally++;
+                }
+                if (this.indexOf(this.blocks[player], [blockX+3, blockY+3]) != -1) {
+                    threeGoingDownDiagonally++;
+                }
+                if(threeGoingDownDiagonally == 3) {
+                    return moves;
+                }
+
+            }
+        }
+
+        for (var column = 0; column < this.width; column++) {
+            var row = this.height-1;
+            while((this.indexOf(this.blocks[0],[column,row]) != -1) || (this.indexOf(this.blocks[1],[column,row]) != -1)) {
+                if(row < 0) {
+                    break;
+                }
+                row--;
+            }
+            if(row >= 0) {
+                var option = this.clone();
+                option.blocks[playerId].push([column, row]);
+                moves.push(option);
+            }
+        }
+        return moves;
+    }
+
+    ,/**
+     * equals
+     */
+    equals: function(other) {
+        for (var player = 0; player < this.blocks.length; player++) {
+            for (var i = 0; i < this.blocks[player].length; i++) {
+                var block = this.blocks[player][i];
+                var otherHasBlock = false;
+                for (var j = 0; j < other.blocks[player].length; j++) {
+                    var otherBlock = other.blocks[player][j];
+                    if (block[0] == otherBlock[0] && block[1] == otherBlock[1]) {
+                        otherHasBlock = true;
+                        break;
+                    }
+                }
+                if (!otherHasBlock) return false;
+            }
+        }
+
+        for (var player = 0; player < other.blocks.length; player++) {
+            for (var i = 0; i < other.blocks[player].length; i++) {
+                var otherBlock = other.blocks[player][i];
+                var thisHasBlock = false;
+                for (var j = 0; j < this.blocks[player].length; j++) {
+                    var block = this.blocks[player][j];
+                    if (block[0] == otherBlock[0] && block[1] == otherBlock[1]) {
+                        thisHasBlock = true;
+                        break;
+                    }
+                }
+                if (!thisHasBlock) return false;
+            }
+        }
+        return true;
+    }
+
+    ,/**
+     * Clones
+     */
+    clone: function() {
+        return new ConnectFour(this.width, this.height, this.blocks);
+    }
+
+    ,/**
+     * Creates an indexOf with arrays in arrays
+     */
+    indexOf: function(array, element) {
+        for (var i = 0; i < array.length; i++) {
+            if ((array[i][0] == element[0]) && (array[i][1] == element[1])) {
+                return i;
+            }
+        }
+        return -1;
+    }
+
+});
+
+
+var InteractiveSVGConnectFourView = Class.create({
+
+    initialize: function(position) {
+        this.position = position;
+        this.selectedTile = undefined;
+    }
+
+    ,/**
+     * Draws the checker board and assigns the listener
+     */
+    draw: function(containerElement, listener) {
+        //clear out the children of containerElement
+        while (containerElement.hasChildNodes()) {
+            containerElement.removeChild(containerElement.firstChild);
+        }
+        var svgNS = "http://www.w3.org/2000/svg";
+        var boardSvg = document.createElementNS(svgNS, "svg");
+        //now add the new board to the container
+        containerElement.appendChild(boardSvg);
+        boardSvg.setAttributeNS(null, "width", 10 + this.position.width * 100);
+        boardSvg.setAttributeNS(null, "height", 10 + this.position.height * 100);
+
+        //draw the checker tiles
+        for (var i = 0; i < this.position.width; i++) {
+            for (var j = 0; j < this.position.height; j++) {
+                // var parityString = "even";
+                // if ((i+j) % 2 == 1) {
+                //     parityString = "odd";
+                // }
+                var checkerTile = document.createElementNS(svgNS,"rect");
+                checkerTile.setAttributeNS(null, "x", (i * 100) + "");
+                checkerTile.setAttributeNS(null, "y", (j * 100) + "");
+                checkerTile.setAttributeNS(null, "width", "100");
+                checkerTile.setAttributeNS(null, "height", "100");
+                // checkerTile.setAttributeNS(null, "class", parityString + "Checker");
+                checkerTile.setAttributeNS(null, "class", "connectFour");
+                boardSvg.appendChild(checkerTile);
+                if (listener != undefined) {
+                    var player = listener;
+                    checkerTile.onclick = function(event) {player.handleClick(event);}
+                }
+
+            }
+        }
+
+        //draw the pieces
+        for (var playerId = 0; playerId < 2; playerId++) {
+            for (var i =0; i < this.position.blocks[playerId].length; i++) {
+                var block = this.position.blocks[playerId][i];
+                var column = block[0];
+                var row = block[1];
+                var piece = document.createElementNS(svgNS, "circle");
+                piece.setAttributeNS(null, "cx", new String((10 + column * 100)+40));
+                piece.setAttributeNS(null, "cy", new String((10 + row * 100)+40));
+                //these two lines round the corners
+                piece.setAttributeNS(null, "r", "50");
+                // dominoRect.setAttributeNS(null, "ry", "10");
+                // dominoRect.setAttributeNS(null, "width", new String(100 * (1 + playerId) - 20));
+                // dominoRect.setAttributeNS(null, "height", new String(100 * (2 - playerId) - 20));
+                piece.setAttributeNS(null, "class", "piece");
+                if(playerId == 1) {
+                    piece.setAttributeNS(null, "class", "red");
+                }
+                if(playerId == 0) {
+                    piece.setAttributeNS(null, "class", "yellow");
+                }
+                boardSvg.appendChild(piece);
+            }
+        }
+
+    }
+
+    ,/**
+     * Selects a tile.
+     */
+    selectTile: function(tile) {
+        this.selectedTile = tile;
+        this.selectedTile.oldColor = this.selectedTile.style.fill;
+        this.selectedTile.style.fill = "red";
+    }
+
+    ,/**
+     * Deselect piece.
+     */
+    deselectTile: function() {
+        this.selectedTile.style.fill = this.selectedTile.oldColor;
+        this.selectedTile = undefined;
+    }
+
+    ,/**
+     *
+     */
+    getNextPositionFromElementLocations: function(element, containerElement, currentPlayer) {
+        // //measure the distance between rectangle corners
+        // var xDistance = Math.abs(secondElement.x.baseVal.value - firstElement.x.baseVal.value);
+        // var yDistance = Math.abs(secondElement.y.baseVal.value - firstElement.y.baseVal.value);
+        // //make sure this is correct for the current player
+        // if ((xDistance == 100 * currentPlayer) && (yDistance == 100*(1-currentPlayer))) {
+            var column = element.x.baseVal.value / 100;
+            console.log("The column is: " + column);
+            var row = element.y.baseVal.value/ 100;
+            // if(row != )
+            var nextPosition = this.position.clone();
+            //console.log("New domino at [" + column + ", " + row + "]");
+            nextPosition.blocks[currentPlayer].push([column, row]);
+            return nextPosition;
+        // } else {
+        //     return null;
+        // }
+    }
+
+    ,/**
+     * Handles a mouse click.
+     */
+    getNextPositionFromClick: function(event, currentPlayer, containerElement) {
+        var clickedTile = event.target; //this will be a tile
+        console.log("clickedTile: " + clickedTile);
+        // if (this.selectedTile == undefined) {
+        //     this.selectTile(clickedTile);
+        //     return null;
+        // } else {
+            var nextPosition = this.getNextPositionFromElementLocations(clickedTile, containerElement, currentPlayer);
+            // this.deselectTile();
+            return nextPosition;
+            /*
+            //measure the distance between rectangle corners
+            var xDistance = Math.abs(clickedTile.x.baseVal.value - this.selectedTile.x.baseVal.value);
+            var yDistance = Math.abs(clickedTile.y.baseVal.value - this.selectedTile.y.baseVal.value);
+            //make sure this is correct for the current player
+            if ((xDistance == 100 * currentPlayer) && (yDistance == 100*(1-currentPlayer))) {
+                var column = parseInt(Math.min(clickedTile.x.baseVal.value, this.selectedTile.x.baseVal.value) / 100);
+                var row = parseInt(Math.min(clickedTile.y.baseVal.value, this.selectedTile.y.baseVal.value) / 100);
+                var nextPosition = this.position.clone();
+                //console.log("New domino at [" + column + ", " + row + "]");
+                nextPosition.dominoes[currentPlayer].push([column, row]);
+                this.deselectTile();
+                return nextPosition;
+            } else {
+                this.deselectTile();
+                return null;
+            }
+            */
+        // }
+    }
+});  //end of InteractiveSVGConnectFourView
+
+var InteractiveSVGConnectFourViewFactory = Class.create({
+    /**
+     * Constructor
+     */
+    initialize: function() {
+        //do nothing
+    }
+
+    ,/**
+     * Returns an interactive view
+     */
+    getInteractiveBoard: function(position) {
+        return new InteractiveSVGConnectFourView(position);
+    }
+
+    ,/**
+     * Returns a view.
+     */
+    getView: function(position) {
+        return this.getInteractiveBoard(position);
+    }
+
+}); //end of InteractiveSVGDomineeringViewFactory
 
 /********************************Clobber**********************************************/
 
@@ -957,7 +1315,7 @@ var InteractiveButtonsAndScissorsViewFactory = Class.create({
  * Class for Clobber ruleset.
  */
 var Clobber = Class.create(CombinatorialGame, {
-    
+
     /**
      * Constructor.  TODO: refactor to only take one positions 2-D list.
      */
@@ -984,7 +1342,7 @@ var Clobber = Class.create(CombinatorialGame, {
         this.redPieces = this.pieces[1];
         */
     }
-    
+
     /**
      * Constructor Helper.
      */
@@ -995,12 +1353,12 @@ var Clobber = Class.create(CombinatorialGame, {
                 var coordinates = [i, j];
                 if ((i+j) % 2 == playerIndex) {
                     pieces.push(coordinates);
-                } 
+                }
             }
         }
         return pieces;
     }
-    
+
     ,/**
      * Determines whether this equals another position.  Tests identical equality, not equivalence.
      */
@@ -1030,7 +1388,7 @@ var Clobber = Class.create(CombinatorialGame, {
         }
         return true;
     }
-    
+
     ,/**
      * Returns the distance between two pieces.
      */
@@ -1039,14 +1397,14 @@ var Clobber = Class.create(CombinatorialGame, {
         distance += Math.abs(position0[1] - position1[1]);
         return distance == 1;
     }
-    
+
     ,/**
      * Clones this game.
      */
     clone: function() {
         return new Clobber(this.width, this.height, this.draughts);
     }
-    
+
     /**
      * Gets the options for a player.
      */
@@ -1062,7 +1420,7 @@ var Clobber = Class.create(CombinatorialGame, {
                 if (this.areAdjacent(currentPiece, otherPiece)) {
                     //generate a new game!
                     var nextPieces = [new Array(), new Array()];
-                    
+
                     //add the current player's pieces
                     for (var k = 0; k < currentPlayerPieces.length; k++) {
                         if (k != i) {
@@ -1073,7 +1431,7 @@ var Clobber = Class.create(CombinatorialGame, {
                             nextPieces[playerId].push(otherPiece)
                         }
                     }
-                    
+
                     //add the other player's pieces
                     for (var k = 0; k < otherPlayerPieces.length; k++) {
                         if (k != j) {
@@ -1082,15 +1440,15 @@ var Clobber = Class.create(CombinatorialGame, {
                         }
                     }
                     var option = new Clobber(this.width, this.height, nextPieces)
-                    options.push(option); 
+                    options.push(option);
                     //break; //stop checking for neighbors to the current player's piece
                 }
-                
+
             }
         }
         return options;
     }
-    
+
     ,/**
      * toString
      */
@@ -1108,7 +1466,7 @@ var Clobber = Class.create(CombinatorialGame, {
 }); //end of Clobber
 
 var ReverseClobber = Class.create(Clobber, {
-    
+
     /**
      * Gets the options for a player.
      */
@@ -1138,12 +1496,12 @@ var ReverseClobber = Class.create(Clobber, {
                     options.push(option); //TODO: switch to 3-argument contstructor
                     break; //stop checking for neighbors to the current player's piece
                 }
-                
+
             }
         }
         return options;
     }
-    
+
     ,/**
      * toString
      */
@@ -1158,16 +1516,16 @@ var ReverseClobber = Class.create(Clobber, {
         }
         return string;
     }
-    
+
 }); //end of ReverseClobber
 
 /**
  * Class for Clobbineering ruleset.
  */
 var Clobbineering = Class.create(CombinatorialGame, {
-    
+
     /**
-     * Constructor.  
+     * Constructor.
      */
     initialize: function(width, height, draughts, dominoes, blockedSpaces) {
         this.playerNames = ["Blue/Vertical", "Red/Horizontal"];
@@ -1179,7 +1537,7 @@ var Clobbineering = Class.create(CombinatorialGame, {
         this.clobber = new Clobber(this.width, this.height, draughts);
         this.domineering = new Domineering(this.width, this.height, dominoes, blockedSpaces);
     }
-    
+
     ,/**
      * toString
      */
@@ -1189,14 +1547,14 @@ var Clobbineering = Class.create(CombinatorialGame, {
         string += this.domineering.toString();
         return string;
     }
-    
+
     ,/**
      * equals
      */
     equals: function(other) {
         return this.clobber.equals(other.clobber) && this.domineering.equals(other.domineering);
     }
-    
+
     ,/**
      * clone
      */
@@ -1204,13 +1562,13 @@ var Clobbineering = Class.create(CombinatorialGame, {
         var clone = new Clobbineering(this.width, this.height, this.clobber.draughts, this.domineering.dominoes, this.domineering.blockedSpaces);
         return clone;
     }
-    
+
     ,/**
      * getOptionsForPlayer
      */
     getOptionsForPlayer: function(playerId) {
         var options = new Array();
-        
+
         //add the clobber-type moves.
         var clobberMoves = this.clobber.getOptionsForPlayer(playerId);
         for (var i = 0; i < clobberMoves.length; i++) {
@@ -1218,7 +1576,7 @@ var Clobbineering = Class.create(CombinatorialGame, {
             var option = new Clobbineering(this.width, this.height, clobberMove.draughts, this.domineering.dominoes, this.domineering.blockedSpaces);
             options.push(option);
         }
-        
+
         //add the domineering type moves
         //put the clobber pieces in as blocks
         var domineeringWithClobberBlocks = this.domineering.clone();
@@ -1228,7 +1586,7 @@ var Clobbineering = Class.create(CombinatorialGame, {
                 domineeringWithClobberBlocks.blockedSpaces.push([clobberPieces[j][0], clobberPieces[j][1]]);
             }
         }
-        
+
         var dominoPlacements = domineeringWithClobberBlocks.getDominoMoves(playerId);
         for (var i = 0; i < dominoPlacements.length; i++) {
             var newDomino = dominoPlacements[i];
@@ -1238,20 +1596,20 @@ var Clobbineering = Class.create(CombinatorialGame, {
             option.domineering.dominoes[playerId].push([column, row]);
             options.push(option);
         }
-        
+
         return options;
     }
-    
+
 }); //end of Clobbineering
-    
+
 
 var InteractiveSVGClobbineeringView = Class.create({
-    
+
     initialize: function(position) {
         this.position = position;
         this.selectedElement = undefined;
     }
-    
+
     ,/**
      * Draws the checker board and assigns the listener
      */
@@ -1262,11 +1620,11 @@ var InteractiveSVGClobbineeringView = Class.create({
         }
         var svgNS = "http://www.w3.org/2000/svg";
         var boardSvg = document.createElementNS(svgNS, "svg");
-        //now add the new board to the container 
+        //now add the new board to the container
         containerElement.appendChild(boardSvg);
         boardSvg.setAttributeNS(null, "width", 10 + this.position.width * 100);
         boardSvg.setAttributeNS(null, "height", 10 + this.position.height * 100);
-        
+
         //draw the checker tiles
         for (var i = 0; i < this.position.width; i++) {
             for (var j = 0; j < this.position.height; j++) {
@@ -1286,12 +1644,12 @@ var InteractiveSVGClobbineeringView = Class.create({
                     checkerTile.onclick = function(event) {player.handleClick(event);}
                 }
                 checkerTile.normalStyleCssText  = checkerTile.style.cssText;
-                checkerTile.style.fill = "gray";
+                checkerTile.style.fill = "red";
                 checkerTile.selectedStyleCssText = checkerTile.style.cssText;
-                checkerTile.style.cssText = checkerTile.normalStyleCssText;                
+                checkerTile.style.cssText = checkerTile.normalStyleCssText;
             }
         }
-        
+
         //draw the dominoes
         for (var playerId = 0; playerId < this.position.domineering.dominoes.length; playerId++) {
             var dominoes = this.position.domineering.dominoes[playerId];
@@ -1311,7 +1669,7 @@ var InteractiveSVGClobbineeringView = Class.create({
                 boardSvg.appendChild(dominoRect);
             }
         }
-        
+
         //draw the draughts
         for (var i = 0; i < this.position.clobber.draughts.length; i++) {
             var draughts = this.position.clobber.draughts[i];
@@ -1341,7 +1699,7 @@ var InteractiveSVGClobbineeringView = Class.create({
             }
         }
     }
-    
+
     ,/**
      * Selects a piece.
      */
@@ -1350,7 +1708,7 @@ var InteractiveSVGClobbineeringView = Class.create({
         this.selectedElement.style.cssText = this.selectedElement.selectedStyleCssText;
         this.selectedElement;
     }
-    
+
     ,/**
      * Deselect piece.
      */
@@ -1358,7 +1716,7 @@ var InteractiveSVGClobbineeringView = Class.create({
         this.selectedElement.style.cssText = this.selectedElement.normalStyleCssText;
         this.selectedElement = undefined;
     }
-    
+
     ,/**
      * Handles a mouse click.
      * TODO: working on this!
@@ -1384,7 +1742,7 @@ var InteractiveSVGClobbineeringView = Class.create({
                 if (clobberMove != null) {
                     var newPosition =  new Clobbineering(this.position.width, this.position.height, clobberMove.draughts, this.position.domineering.dominoes, this.position.domineering.blockedSpaces);
                     return newPosition;
-                } 
+                }
             } else {
                 this.deselectElement();
             }
@@ -1404,29 +1762,29 @@ var InteractiveSVGClobbineeringViewFactory = Class.create({
     initialize: function() {
         //do nothing
     }
-    
+
     ,/**
      * Returns an interactive view
      */
     getInteractiveBoard: function(position) {
         return new InteractiveSVGClobbineeringView(position);
     }
-    
+
     ,/**
      * Returns a view.
      */
     getView: function(position) {
         return this.getInteractiveBoard(position);
     }
-    
+
 }); //end of InteractiveSVGClobbineeringViewFactory
-        
+
 
 /**
  * Class for Domineering ruleset.
  */
 var Domineering = Class.create(CombinatorialGame, {
-    
+
     /**
      * Constructor
      */
@@ -1450,7 +1808,7 @@ var Domineering = Class.create(CombinatorialGame, {
         this.playerNames = ["Vertical", "Horizontal"];
         //console.log("New domineering game created with " + (this.dominoes[0].length + this.dominoes[1].length) + " dominoes and " + this.blockedSpaces.length + " blocked spaces.");
     }
-    
+
     ,/**
      * toString
      */
@@ -1468,7 +1826,7 @@ var Domineering = Class.create(CombinatorialGame, {
         }
         return string;
     }
-    
+
     ,/**
      * Clones this, but replaces dominoes with blocked spaces
      */
@@ -1478,13 +1836,14 @@ var Domineering = Class.create(CombinatorialGame, {
             while (clone.dominoes[playerId].length > 0) {
                 //domino is upper-left corner of domino
                 var domino = clone.dominoes[playerId].pop();
+                console.log("Pushing the domino: " + domino);
                 clone.blockedSpaces.push(domino);
                 clone.blockedSpaces.push([domino[0] + playerId, domino[1] + (1-playerId)]);
             }
         }
         return clone;
     }
-    
+
     ,/**
      * Returns the move options.
      */
@@ -1499,21 +1858,22 @@ var Domineering = Class.create(CombinatorialGame, {
             option.dominoes[playerId].push([column, row]);
             //console.log("[" + column + ", " + row + "]");
             options.push(option);
+            // console.log("options: " + options);
         }
         /*
         //don't look at the bottom row for vertical player
         for (var row = 0; row < this.height + playerId - 1; row++) {
-            
+
             //don't look at the right-most column for horizontal
             for (var column = 0; column < this.width - playerId; column++) {
                 //the two spaces the domino would take up
                 var dominoSpaces = new Array();
                 dominoSpaces.push([column, row]);
                 dominoSpaces.push([column + playerId, row + (1-playerId)]);
-                
+
                 //create the version of this with dominoes replaced by blocked spots
                 var allBlocks = this.canonize();
-                
+
                 var blocked = false;
                 //make sure no blocked spaces are in the way
                 for (var blockIndex = 0; blockIndex < allBlocks.blockedSpaces.length; blockIndex++) {
@@ -1537,7 +1897,7 @@ var Domineering = Class.create(CombinatorialGame, {
         }*/
         return options;
     }
-    
+
     ,/**
      * Gets a list of single-domino placement options for the next player.  Does not return entire game states!
      */
@@ -1545,17 +1905,17 @@ var Domineering = Class.create(CombinatorialGame, {
         var moves = new Array();
         //don't look at the bottom row for vertical player
         for (var row = 0; row < this.height + playerId - 1; row++) {
-            
+
             //don't look at the right-most column for horizontal
             for (var column = 0; column < this.width - playerId; column++) {
                 //the two spaces the domino would take up
                 var dominoSpaces = new Array();
                 dominoSpaces.push([column, row]);
                 dominoSpaces.push([column + playerId, row + (1-playerId)]);
-                
+
                 //create the version of this with dominoes replaced by blocked spots
                 var allBlocks = this.canonize();
-                
+
                 var blocked = false;
                 //make sure no blocked spaces are in the way
                 for (var blockIndex = 0; blockIndex < allBlocks.blockedSpaces.length; blockIndex++) {
@@ -1576,7 +1936,7 @@ var Domineering = Class.create(CombinatorialGame, {
         }
         return moves;
     }
-    
+
     ,/**
      * clone
      */
@@ -1584,13 +1944,13 @@ var Domineering = Class.create(CombinatorialGame, {
         //
         return new Domineering(this.width, this.height, this.dominoes, this.blockedSpaces);
     }
-    
+
     ,/**
      * equals
-     */ 
+     */
     equals: function(other) {
         //Check that we have matching dominoes.
-        
+
         //check that other has all of our dominoes
         for (var player = 0; player < this.dominoes.length; player++) {
             for (var i = 0; i < this.dominoes[player].length; i++) {
@@ -1606,7 +1966,7 @@ var Domineering = Class.create(CombinatorialGame, {
                 if (!otherHasDomino) return false;
             }
         }
-        
+
         //now check that we have all of other's dominoes
         //(We don't compare sizes in case there are any repeats.)
         for (var player = 0; player < other.dominoes.length; player++) {
@@ -1623,9 +1983,9 @@ var Domineering = Class.create(CombinatorialGame, {
                 if (!thisHasDomino) return false;
             }
         }
-        
+
         //now check that blocked spaces match
-        
+
         //check that other has all of our blocked spaces
         for (var i = 0; i < this.blockedSpaces.length; i++) {
             var block = this.blockedSpaces[i];
@@ -1639,7 +1999,7 @@ var Domineering = Class.create(CombinatorialGame, {
             }
             if (!hasBlock) return false;
         }
-        
+
         //check that this has all of other's blocked spaces
         for (var i = 0; i < other.blockedSpaces.length; i++) {
             var otherBlock = other.blockedSpaces[i]
@@ -1653,22 +2013,1039 @@ var Domineering = Class.create(CombinatorialGame, {
             }
             if (!hasBlock) return false;
         }
-        
+
         //all things match! :)
-        return true;        
+        return true;
     }
-    
-    
+
+
 }); //end of Domineering class
-    
+
+
+/**
+ * Class for Manalath
+ */
+var Manalath = Class.create(CombinatorialGame, {
+
+    /**
+     * Constructor
+     */
+    initialize: function(width, height, blockedSpaces) {
+        blockedSpaces = blockedSpaces || [new Array(), new Array()];
+        this.blockedSpaces = [new Array(), new Array()];
+        for (var i = 0; i < blockedSpaces.length; i++) {
+            for (var j = 0; j < blockedSpaces[i].length; j++) {
+                var blockedSpace = blockedSpaces[i][j];
+                this.blockedSpaces[i].push([blockedSpace[0], blockedSpace[1]]);
+            }
+        }
+        this.width = width;
+        this.height = height;
+        this.playerNames = ["Red", "Blue"];
+    }
+
+    ,/**
+     * toString
+     */
+     toString: function() {
+        for (var i = 0; i < this.blockedSpaces.length; i++) {
+            if(i == 0) {
+                string = "Red player currently has blocks at: ";
+            }
+            else {
+                string = "Blue player currently has blocks at: ";
+            }
+            for (var j = 0; j < this.blockedSpaces[i].length; j++) {
+                string += this.blockedSpaces[i][j] + ",";
+            }
+        }
+    }
+
+    ,/**
+     * indexOf for arrays in arrays
+     */
+     indexOf: function(array, block) {
+        for (var i = 0; i < array.length; i++) {
+            if((array[i][0] == block[0]) && (array[i][1] == block[1])) {
+                return i;
+            }
+        }
+        return -1;
+    }
+
+    ,/**
+     * Looks at what group a block is a part of
+     */
+    sameColorGroupABlockIsIn: function(block, player) {
+        var group = new Array();
+        group.push(block);
+        for (var i = 0; i < group.length; i++) {
+            var block = group[i];
+            if(block[1] < Math.floor(this.height/2)) {
+                var down = block[1]+1;
+                var up = block[1]-1;
+                var toTheRight = block[0]+1;
+                var toTheLeft = block[0]-1;
+                for (var j = 0; j < this.blockedSpaces[player].length; j++) {
+                    //Same x, down to the left
+                    if (((block[0] == this.blockedSpaces[player][j][0]) && (down == this.blockedSpaces[player][j][1]))) {
+                        if (this.indexOf(group, this.blockedSpaces[player][j]) == -1) {
+                            group.push(this.blockedSpaces[player][j]);
+                        }
+                    }
+                    //down to the right
+                    else if (((toTheRight == this.blockedSpaces[player][j][0]) && (down == this.blockedSpaces[player][j][1]))) {
+                        if (this.indexOf(group, this.blockedSpaces[player][j]) == -1) {
+                            group.push(this.blockedSpaces[player][j]);
+                        }
+                    }
+                    //Same y, to the right
+                    else if (((toTheRight == this.blockedSpaces[player][j][0]) && (block[1] == this.blockedSpaces[player][j][1]))) {
+                        if (this.indexOf(group, this.blockedSpaces[player][j]) == -1) {
+                            group.push(this.blockedSpaces[player][j]);
+                        }
+                    }
+                    //Same y, to the left
+                    else if (((toTheLeft == this.blockedSpaces[player][j][0]) && (block[1] == this.blockedSpaces[player][j][1]))) {
+                        if (this.indexOf(group, this.blockedSpaces[player][j]) == -1) {
+                            group.push(this.blockedSpaces[player][j]);
+                        }
+                    }
+                    //up, to the right
+                    else if (((block[0] == this.blockedSpaces[player][j][0]) && (up == this.blockedSpaces[player][j][1]))) {
+                        if (this.indexOf(group, this.blockedSpaces[player][j]) == -1) {
+                            group.push(this.blockedSpaces[player][j]);
+                        }
+                    }
+                    //up, to the left
+                    else if (((toTheLeft == this.blockedSpaces[player][j][0]) && (up == this.blockedSpaces[player][j][1]))) {
+                        if (this.indexOf(group, this.blockedSpaces[player][j]) == -1) {
+                            group.push(this.blockedSpaces[player][j]);
+                        }
+                    }
+                }
+            }
+
+            else if(block[1] == Math.floor(this.height/2)) {
+                var down = block[1]+1;
+                var up = block[1]-1;
+                var toTheRight = block[0]+1;
+                var toTheLeft = block[0]-1;
+                for (var j = 0; j < this.blockedSpaces[player].length; j++) {
+                    //down to the left
+                    if (((toTheLeft == this.blockedSpaces[player][j][0]) && (down == this.blockedSpaces[player][j][1]))) {
+                        if (this.indexOf(group, this.blockedSpaces[player][j]) == -1) {
+                            group.push(this.blockedSpaces[player][j]);
+                        }
+                    }
+                    //down to the right
+                    else if (((block[0] == this.blockedSpaces[player][j][0]) && (down == this.blockedSpaces[player][j][1]))) {
+                        if (this.indexOf(group, this.blockedSpaces[player][j]) == -1) {
+                            group.push(this.blockedSpaces[player][j]);
+                        }
+                    }
+                    //Same y, to the right
+                    else if (((toTheRight == this.blockedSpaces[player][j][0]) && (block[1] == this.blockedSpaces[player][j][1]))) {
+                        if (this.indexOf(group, this.blockedSpaces[player][j]) == -1) {
+                            group.push(this.blockedSpaces[player][j]);
+                        }
+                    }
+                    //Same y, to the left
+                    else if (((toTheLeft == this.blockedSpaces[player][j][0]) && (block[1] == this.blockedSpaces[player][j][1]))) {
+                        if (this.indexOf(group, this.blockedSpaces[player][j]) == -1) {
+                            group.push(this.blockedSpaces[player][j]);
+                        }
+                    }
+                    //up, to the right
+                    else if (((block[0] == this.blockedSpaces[player][j][0]) && (up == this.blockedSpaces[player][j][1]))) {
+                        if (this.indexOf(group, this.blockedSpaces[player][j]) == -1) {
+                            group.push(this.blockedSpaces[player][j]);
+                        }
+                    }
+                    //up, to the left
+                    else if (((toTheLeft == this.blockedSpaces[player][j][0]) && (up == this.blockedSpaces[player][j][1]))) {
+                        if (this.indexOf(group, this.blockedSpaces[player][j]) == -1) {
+                            // console.log("Pushing the block6: " + this.blockedSpaces[player][j]);
+                            group.push(this.blockedSpaces[player][j]);
+                        }
+                    }
+                }
+            }
+
+
+            else if(block[1] > Math.floor(this.height/2)) {
+                var down = block[1]+1;
+                var up = block[1]-1;
+                var toTheRight = block[0]+1;
+                var toTheLeft = block[0]-1;
+                for (var j = 0; j < this.blockedSpaces[player].length; j++) {
+                    //down to the left
+                    if (((toTheLeft == this.blockedSpaces[player][j][0]) && (down == this.blockedSpaces[player][j][1]))) {
+                        if (this.indexOf(group, this.blockedSpaces[player][j]) == -1) {
+                            group.push(this.blockedSpaces[player][j]);
+                        }
+                    }
+                    //down to the right
+                    else if (((block[0] == this.blockedSpaces[player][j][0]) && (down == this.blockedSpaces[player][j][1]))) {
+                        if (this.indexOf(group, this.blockedSpaces[player][j]) == -1) {
+                            group.push(this.blockedSpaces[player][j]);
+                        }
+                    }
+                    //Same y, to the right
+                    else if (((toTheRight == this.blockedSpaces[player][j][0]) && (block[1] == this.blockedSpaces[player][j][1]))) {
+                        if (this.indexOf(group, this.blockedSpaces[player][j]) == -1) {
+                            group.push(this.blockedSpaces[player][j]);
+                        }
+                    }
+                    //Same y, to the left
+                    else if (((toTheLeft == this.blockedSpaces[player][j][0]) && (block[1] == this.blockedSpaces[player][j][1]))) {
+                        if (this.indexOf(group, this.blockedSpaces[player][j]) == -1) {
+                            // console.log("Pushing the block4: " + this.blockedSpaces[player][j]);
+                            group.push(this.blockedSpaces[player][j]);
+                        }
+                    }
+                    //up, to the right
+                    else if (((toTheRight == this.blockedSpaces[player][j][0]) && (up == this.blockedSpaces[player][j][1]))) {
+                        if (this.indexOf(group, this.blockedSpaces[player][j]) == -1) {
+                            // console.log("Pushing the block5: " + this.blockedSpaces[player][j]);
+                            group.push(this.blockedSpaces[player][j]);
+                        }
+                    }
+                    //up, to the left
+                    else if (((block[0] == this.blockedSpaces[player][j][0]) && (up == this.blockedSpaces[player][j][1]))) {
+                        if (this.indexOf(group, this.blockedSpaces[player][j]) == -1) {
+                            // console.log("Pushing the block6: " + this.blockedSpaces[player][j]);
+                            group.push(this.blockedSpaces[player][j]);
+                        }
+                    }
+                }
+            }
+
+        }
+        return group;
+    }
+
+
+    ,/**
+     * indexOf for arrays in arrays
+     */
+    indexOfArray: function(mainArray, array) {
+        var counter = 0;
+        for (var i = 0; i < mainArray.length; i++) {
+            for (var j = 0; j < mainArray[i].length; j++) {
+                for (var k=0; k < array.length; k++) {
+                    if ((mainArray[i][j][0] == array[k][0]) && (mainArray[i][j][1] == array[k][1])) {
+                        counter++;
+                    }
+                }
+                if (counter == mainArray[i].length) {
+                    return i;
+                }
+            }
+        }
+        return -1;
+    }
+
+
+    ,/**
+     * Returns an array of arrays of groups for each player
+     */
+    allGroupsOfSameColor: function() {
+        var allGroups = [new Array(), new Array()];
+        var array = new Array();
+        for (var player = 0; player < this.blockedSpaces.length; player++) {
+            for (var i = 0; i < this.blockedSpaces[player].length; i++) {
+                array = this.sameColorGroupABlockIsIn(this.blockedSpaces[player][i], player)
+                if (this.indexOfArray(allGroups[player], array) == -1) {
+                    allGroups[player].push(array);
+                }
+            }
+        }
+        return allGroups;
+    }
+
+
+
+    ,/**
+     * Clone
+     */
+    clone: function() {
+        return new Manalath(this.width, this.height, this.blockedSpaces);
+    }
+
+    ,/**
+     * Equals
+     */
+    equals: function(other) {
+        for (var player = 0; player < this.blockedSpaces.length; player++) {
+            for (var i = 0; i < this.blockedSpaces[player].length; i++) {
+                var block = this.blockedSpaces[player][i];
+                var otherHasBlock = false;
+                for (var j = 0; j < other.blockedSpaces[player].length; j++) {
+                    var otherBlock = other.blockedSpaces[player][j];
+                    if (block[0] == otherBlock[0] && block[1] == otherBlock[1]) {
+                        otherHasBlock = true;
+                        break;
+                    }
+                }
+                if (!otherHasBlock) return false;
+            }
+        }
+
+        for (var player = 0; player < other.blockedSpaces.length; player++) {
+            for (var i = 0; i < other.blockedSpaces[player].length; i++) {
+                var otherBlock = other.blockedSpaces[player][i];
+                var thisHasBlock = false;
+                for (var j = 0; j < this.blockedSpaces[player].length; j++) {
+                    var block = this.blockedSpaces[player][j];
+                    if (block[0] == otherBlock[0] && block[1] == otherBlock[1]) {
+                        thisHasBlock = true;
+                        break;
+                    }
+                }
+                if (!thisHasBlock) return false;
+            }
+        }
+        return true;
+    }
+
+    ,/**
+     * Returns boards with available moves
+     */
+    getOptionsForPlayer: function(playerId) {
+        //Follows proper rules assuming you can only play your color
+        var options = new Array();
+        var option0;
+        var option;
+        var option1;
+
+        var groups = this.allGroupsOfSameColor();
+        for(var i = 0; i < groups[playerId].length; i++) {
+            if (groups[playerId][i].length == 4){
+                for (var row = 0; row < this.height; row++) {
+                    var widthMeasure;
+                    if (row == Math.floor(this.height/2)) {
+                        widthMeasure = this.width+Math.floor(this.height/2)
+                    } else if (row > Math.floor(this.height/2)) {
+                        widthMeasure = this.width+(this.height-row-1);
+                    } else if (row < Math.floor(this.height/2)) {
+                        widthMeasure = this.width+row;
+                    }
+                    for (var column = 0; column < widthMeasure; column++) {
+                        option0 = this.clone();
+                        option0.blockedSpaces[playerId].push([column, row]);
+                        var allGroupsOfSameColor0 = option0.allGroupsOfSameColor();
+                        var counter0 = 0;
+                        for (var i = 0; i < allGroupsOfSameColor0[playerId].length; i++) {
+                            if (allGroupsOfSameColor0[playerId][i].length == 5) {
+                                counter0++;
+                            }
+                        }
+                        var counter2 = 0;
+                        for (var player = 0; player < this.blockedSpaces.length; player++) {
+                            for (var i = 0; i < this.blockedSpaces[player].length; i++) {
+                                if ((this.blockedSpaces[player][i][0] == column) && (this.blockedSpaces[player][i][1] == row)) {
+                                    counter2++;
+                                    break;
+                                }
+                            }
+                        }
+                        if((counter0 > 0) && (counter2 == 0)) {
+                            options.push(option0);
+                        }
+                    }
+                }
+                return options;
+            }
+        }
+
+
+
+
+
+        for (var i = 0; i < groups[Math.abs((playerId%2)-1)].length; i++) {
+            if (groups[Math.abs((playerId%2)-1)][i].length == 5) {
+                return options;
+            }
+        }
+
+        for (var row = 0; row < this.height; row++) {
+            var widthMeasure;
+            if (row == Math.floor(this.height/2)) {
+                widthMeasure = this.width+Math.floor(this.height/2)
+            } else if (row > Math.floor(this.height/2)) {
+                widthMeasure = this.width+(this.height-row-1);
+            } else if (row < Math.floor(this.height/2)) {
+                widthMeasure = this.width+row;
+            }
+            for (var column = 0; column < widthMeasure; column++) {
+                option = this.clone();
+                option.blockedSpaces[playerId].push([column, row]);
+                var allGroupsOfSameColor = option.allGroupsOfSameColor();
+                var counter = 0;
+                var counter1 = 0;
+                var newGroupsOfFour;
+                for (var i = 0; i < allGroupsOfSameColor[playerId].length; i++) {
+                    if ((allGroupsOfSameColor[playerId][i].length == 4) || (allGroupsOfSameColor[playerId][i].length > 5)) {
+                        counter++;
+                    }
+                }
+                for (var player = 0; player < this.blockedSpaces.length; player++) {
+                    for (var i = 0; i < this.blockedSpaces[player].length; i++) {
+                        if ((this.blockedSpaces[player][i][0] == column) && (this.blockedSpaces[player][i][1] == row)) {
+                            counter++;
+                            counter1++;
+                            break;
+                        }
+                    }
+                }
+
+                option1 = this.clone();
+                option1.blockedSpaces[Math.abs((playerId%2)-1)].push([column, row]);
+                var allGroupsOfSameColor1 = option1.allGroupsOfSameColor();
+                for (var i = 0; i < allGroupsOfSameColor1[Math.abs((playerId%2)-1)].length; i++) {
+                    if (allGroupsOfSameColor1[Math.abs((playerId%2)-1)][i].length > 4) {
+                        counter1++;
+                    }
+                }
+                if(counter1 == 0) {
+                    options.push(option1);
+                }
+
+                if(counter == 0) {
+                    options.push(option);
+                }
+            }
+        }
+        return options;
+    }
+
+    /**
+     * Returns the color of a circle.
+     */
+    ,getCircleColor: function(column, row) {
+        for (var i = 0; i < this.blockedSpaces.length; i++) {
+            for (var j = 0; j< this.blockedSpaces[i].length; j++) {
+                var blockedSpace = this.blockedSpaces[i][j];
+                if ((blockedSpace[0] == column) && (blockedSpace[1] == row)) {
+                    return i;
+                }
+            }
+        }
+        return Manalath.prototype.UNCOLORED;
+    }
+
+    ,/**
+     * Returns the board with a possible move
+     */
+    getOptionWith: function(column, row, color) {
+        var clone = this.clone();
+        clone.blockedSpaces[color].push([column, row]);
+        return clone;
+    }
+});
+Manalath.prototype.RED = 0;
+Manalath.prototype.BLUE = 1;
+Manalath.prototype.UNCOLORED = 2;
+
+
+
+var InteractiveManalathView = Class.create({
+
+    initialize: function(position) {
+        this.position = position;
+        this.selectedElement = undefined;
+        this.popup = null;
+    }
+
+    // //Adapted from https://gist.github.com/bencates/5b490ed79796cbd35863
+    // ,hexPoints: function(x, y, radius) {
+    //   var points = [];
+    //   for (var theta = 0; theta < Math.PI * 2; theta += Math.PI / 3) {
+    //     var pointX, pointY;
+    //
+    //     pointX = x + radius * Math.sin(theta);
+    //     pointY = y + radius * Math.cos(theta);
+    //
+    //     points.push(pointX + ',' + pointY);
+    //   }
+    //
+    //   return points.join(' ');
+    // }
+
+    /**
+     * Draws the checker board and assigns the listener
+     */
+    ,draw: function(containerElement, listener) {
+        //clear out the children of containerElement
+        while (containerElement.hasChildNodes()) {
+            containerElement.removeChild(containerElement.firstChild);
+        }
+        var svgNS = "http://www.w3.org/2000/svg";
+        var boardSvg = document.createElementNS(svgNS, "svg");
+        //now add the new board to the container
+        containerElement.appendChild(boardSvg);
+        //var boardPixelSize = 10 + (this.position.sideLength + 4) * 100
+        boardSvg.setAttributeNS(null, "width", 10 + (this.position.width+Math.floor(this.position.height/2)) * 100);
+        boardSvg.setAttributeNS(null, "height", 10 + this.position.height * 100);
+        var columnNumber = 0;
+        //draw the circles
+        for (var row = 0; row < this.position.height; row++) {
+
+            // console.log("column: " + column);
+            // console.log("columnNumber: " + columnNumber);
+            // if((row == 0) || (row == this.position.height-1)){
+            //     for (var column = 0; column < this.position.width; column++) {
+            //         console.log("row: " + row);
+            //         // columnNumber = column;
+            //         var colorInt = this.position.getCircleColor(column, row);
+            //         var circle = document.createElementNS(svgNS, "circle");
+            //         circle.row = row;
+            //         circle.column = column;
+            //
+            //         circle.setAttributeNS(null, "cx", (column * 100) + 50);
+            //         circle.setAttributeNS(null, "cy", (row * 100) + 50);
+            //         circle.setAttributeNS(null, "r", 40);
+            //         if (colorInt == Manalath.prototype.GRAY) {
+            //             circle.setAttributeNS(null, "class", "grayPiece");
+            //         } else if (colorInt == Manalath.prototype.BLACK) {
+            //             circle.setAttributeNS(null, "class", "blackPiece");
+            //         } else {
+            //             circle.setAttributeNS(null, "class", "whitePiece");
+            //             //only white circles are clickable
+            //             if (listener != undefined) {
+            //                 var player = listener;
+            //                 circle.onclick = function(event) {
+            //                     console.log("clicked on: (" + event.target.row + ", " + event.target.column + ")");
+            //                     player.handleClick(event);
+            //                 };
+            //             }
+            //         }
+            //         boardSvg.appendChild(circle);
+            //     }
+            // }
+            if (row == Math.floor(this.position.height/2)) {
+                // console.log("In the other if: " + row);
+                for (var column = 0; column < this.position.width+Math.floor(this.position.height/2); column++) {
+                    // console.log("row: " + row);
+                    // columnNumber = column;
+                    var colorInt = this.position.getCircleColor(column, row);
+                    var circle = document.createElementNS(svgNS, "circle");
+                    circle.row = row;
+                    circle.column = column;
+
+                    circle.setAttributeNS(null, "cx", (column * 100) + 50);
+                    circle.setAttributeNS(null, "cy", (row * 100) + 50);
+                    circle.setAttributeNS(null, "r", 40);
+                    if (colorInt == Manalath.prototype.RED) {
+                        circle.setAttributeNS(null, "class", "redPiece");
+                    } else if (colorInt == Manalath.prototype.BLUE) {
+                        circle.setAttributeNS(null, "class", "bluePiece");
+                    } else {
+                        circle.setAttributeNS(null, "class", "whitePiece");
+                        //only white circles are clickable
+                        if (listener != undefined) {
+                            var player = listener;
+                            circle.onclick = function(event) {
+                                console.log("clicked on: (" + event.target.column + ", " + event.target.row + ")");
+                                player.handleClick(event);
+                            };
+                        }
+                    }
+                    boardSvg.appendChild(circle);
+                }
+            }
+            if(row > Math.floor(this.position.height/2)){
+                for (var column = 0; column < this.position.width+(this.position.height-row-1); column++) {
+                    // console.log("row: " + row);
+                    // columnNumber = column;
+                    var colorInt = this.position.getCircleColor(column, row);
+                    var circle = document.createElementNS(svgNS, "circle");
+                    circle.row = row;
+                    circle.column = column;
+
+                    circle.setAttributeNS(null, "cx", (column * 100) + ((row-Math.floor(this.position.height/2)+1)*50));
+                    circle.setAttributeNS(null, "cy", (row * 100) + 50);
+                    circle.setAttributeNS(null, "r", 40);
+
+                    // circle.setAttributeNS(null, "cx", (column * 100) + 50);
+                    // circle.setAttributeNS(null, "cy", (row * 100) + 50);
+                    // circle.setAttributeNS(null, "r", 40);
+                    if (colorInt == Manalath.prototype.RED) {
+                        circle.setAttributeNS(null, "class", "redPiece");
+                    } else if (colorInt == Manalath.prototype.BLUE) {
+                        circle.setAttributeNS(null, "class", "bluePiece");
+                    } else {
+                        circle.setAttributeNS(null, "class", "whitePiece");
+                        //only white circles are clickable
+                        if (listener != undefined) {
+                            var player = listener;
+                            circle.onclick = function(event) {
+                                console.log("clicked on: (" + event.target.column + ", " + event.target.row + ")");
+                                player.handleClick(event);
+                            };
+                        }
+                    }
+                    boardSvg.appendChild(circle);
+                }
+            }
+            if(row < Math.floor(this.position.height/2)){
+                for (var column = 0; column < this.position.width+row; column++) {
+                    // console.log("row: " + row);
+                    // columnNumber = column;
+                    var colorInt = this.position.getCircleColor(column, row);
+                    var circle = document.createElementNS(svgNS, "circle");
+                    circle.row = row;
+                    circle.column = column;
+
+                    circle.setAttributeNS(null, "cx", (column * 100) + ((Math.abs(row-Math.floor(this.position.height/2))+1)*50));
+                    circle.setAttributeNS(null, "cy", (row * 100) + 50);
+                    circle.setAttributeNS(null, "r", 40);
+                    if (colorInt == Manalath.prototype.RED) {
+                        circle.setAttributeNS(null, "class", "redPiece");
+                    } else if (colorInt == Manalath.prototype.BLUE) {
+                        circle.setAttributeNS(null, "class", "bluePiece");
+                    } else {
+                        circle.setAttributeNS(null, "class", "whitePiece");
+                        //only white circles are clickable
+                        if (listener != undefined) {
+                            var player = listener;
+                            circle.onclick = function(event) {
+                                console.log("clicked on: (" + event.target.column + ", " + event.target.row + ")");
+                                player.handleClick(event);
+                            };
+                        }
+                    }
+                    boardSvg.appendChild(circle);
+                }
+            }
+        }
+    }
+
+    /**
+     * Handles a mouse click.
+     * @param currentPlayer  The index for the player, not the player object.
+     */
+    ,getNextPositionFromClick: function(event, currentPlayer, containerElement, player) {
+        this.destroyPopup();
+        console.log("Clicked!");
+        var self = this;
+        //create the popup
+        this.popup = document.createElement("div");
+        var redButton = document.createElement("button");
+        redButton.appendChild(toNode("Red"));
+        redButton.onclick = function() {
+            self.destroyPopup();
+            player.sendMoveToRef(self.position.getOptionWith(event.target.column, event.target.row, Manalath.prototype.RED));
+        };
+        this.popup.appendChild(redButton);
+
+        var blueButton = document.createElement("button");
+        blueButton.appendChild(toNode("Blue"));
+        blueButton.onclick = function() {
+            self.destroyPopup();
+            player.sendMoveToRef(self.position.getOptionWith(event.target.column, event.target.row, Manalath.prototype.BLUE));
+        };
+        this.popup.appendChild(blueButton);
+
+        this.popup.style.position = "fixed";
+        this.popup.style.display = "block";
+        this.popup.style.opacity = 1;
+        this.popup.width = Math.min(window.innerWidth/2, 100);
+        this.popup.height = Math.min(window.innerHeight/2, 50);
+        this.popup.style.left = event.clientX + "px";
+        this.popup.style.top = event.clientY + "px";
+        document.body.appendChild(this.popup);
+        return null;
+        //}
+    }
+
+    /**
+     * Destroys the popup color window.
+     */
+    ,destroyPopup: function() {
+        if (this.popup != null) {
+            this.popup.parentNode.removeChild(this.popup);
+            this.selectedElement = undefined;
+            this.popup = null;
+        }
+    }
+});  //end of InteractiveAtroposView
+
+/**
+ * View Factory
+ */
+var InteractiveManalathViewFactory = Class.create({
+    /**
+     * Constructor
+     */
+    initialize: function() {
+        //do nothing
+    }
+
+    /**
+     * Returns an interactive view
+     */
+    ,getInteractiveBoard: function(position) {
+        return new InteractiveManalathView(position);
+    }
+
+    ,/**
+     * Returns a view.
+     */
+    getView: function(position) {
+        return this.getInteractiveBoard(position);
+    }
+
+}); //end of InteractiveAtroposViewFactory
+
+
+
+/**
+ * Class for NoCanDo ruleset.
+ */
+var NoCanDo = Class.create(CombinatorialGame, {
+
+    /**
+     * Constructor
+     */
+    initialize: function(width, height, startingDominoes, blockedSpaces) {
+        startingDominoes = startingDominoes || [new Array(), new Array()];
+        this.dominoes = [new Array(), new Array()];
+        for (var i = 0; i < startingDominoes.length; i++) {
+            for (var j = 0; j < startingDominoes[i].length; j++) {
+                var startingDomino = startingDominoes[i][j];
+                this.dominoes[i].push([startingDomino[0], startingDomino[1]]);
+            }
+        }
+        blockedSpaces = blockedSpaces || new Array();
+        this.blockedSpaces = new Array();
+        for (var i = 0; i < blockedSpaces.length; i++) {
+            var blockedSpace = blockedSpaces[i];
+            this.blockedSpaces.push([blockedSpace[0], blockedSpace[1]]);
+        }
+        this.width = width;
+        this.height = height;
+        this.playerNames = ["Vertical", "Horizontal"];
+    }
+
+    ,/**
+     * toString
+     */
+    toString: function() {
+        var string = "Domineering position\n";
+        for (var i = 0; i < this.dominoes.length; i++) {
+            string += this.playerNames[i] + "'s dominoes (top-left corner) are at:\n";
+            for (var j = 0; j < this.dominoes[i].length; j++) {
+                string += "  " + this.dominoes[i][j] + "\n";
+            }
+        }
+        string += "Blocked Spaces:\n";
+        for (var i = 0; i < this.blockedSpaces.length; i++) {
+            string += "  " + this.blockedSpaces[i] + "\n";
+        }
+        return string;
+    }
+
+    ,/**
+     * Clones this, but replaces dominoes with blocked spaces
+     */
+    canonize: function() {
+        var clone = this.clone();
+        for (var playerId = 0; playerId < 2; playerId++) {
+            while (clone.dominoes[playerId].length > 0) {
+                var domino = clone.dominoes[playerId].pop();
+                clone.blockedSpaces.push(domino);
+                clone.blockedSpaces.push([domino[0] + playerId, domino[1] + (1-playerId)]);
+            }
+        }
+        return clone;
+    }
+
+    ,/**
+     * Returns the move options.
+     */
+    getOptionsForPlayer: function(playerId) {
+        var options = new Array();
+        var dominoPlacements = this.getDominoMoves(playerId);
+        for (var i = 0; i < dominoPlacements.length; i++) {
+            var newDomino = dominoPlacements[i];
+            var column = newDomino[0];
+            var row = newDomino[1];
+            var option = this.clone();
+            option.dominoes[playerId].push([column, row]);
+            options.push(option);
+        }
+        return options;
+    }
+
+    ,/**
+     * Checks that a vertical domino has at least one liberty
+     */
+    isVerticalDominoHappy: function(dominoBlock) {
+        var x = dominoBlock[0];
+        var y = dominoBlock[1];
+        var canonizedBoard = this.canonize();
+        var topToTheLeft = dominoBlock[0]+1;
+        var blockedTop = false;
+        var blockedBottom = false;
+        var blockedTopRight = false;
+        var blockedTopLeft = false;
+        var blockedBottomLeft = false;
+        var blockedBottomRight = false;
+        for (var blockIndex = 0; blockIndex < canonizedBoard.blockedSpaces.length; blockIndex++) {
+            var block = canonizedBoard.blockedSpaces[blockIndex]
+            var toTheRight = dominoBlock[0]+1;
+            var toTheLeft = dominoBlock[0]-1;
+            var topAndAbove = dominoBlock[1]-1;
+            var bottomY = dominoBlock[1]+1;
+            var bottomAndBelow = dominoBlock[1]+2;
+            if(((block[0] == toTheRight) && (block[1] == dominoBlock[1])) || (dominoBlock[0] == this.width-1)) {
+                blockedTopRight = true;
+            }
+            if(((block[0] == toTheLeft) && (block[1] == dominoBlock[1])) || (dominoBlock[0] == 0)) {
+                blockedTopLeft = true;
+            }
+            if(((block[0] == dominoBlock[0]) && (block[1] == topAndAbove)) || (dominoBlock[1] == 0)) {
+                blockedTop = true;
+            }
+            if(((block[0] == toTheRight) && (block[1] == bottomY)) || (dominoBlock[0] == this.width-1)) {
+                blockedBottomRight = true;
+            }
+            if(((block[0] == toTheLeft) && (block[1] == bottomY)) || (dominoBlock[0] == 0)) {
+                blockedBottomLeft = true;
+            }
+            if(((block[0] == dominoBlock[0]) && (block[1] == bottomAndBelow)) || (dominoBlock[1] == this.height-2)) {
+                blockedBottom = true;
+            }
+        }
+        if((blockedTop == true) && (blockedBottom == true) && (blockedTopLeft == true) && (blockedTopRight == true) && (blockedBottomLeft == true) && (blockedBottomRight == true)) {
+            return false;
+        } else {
+            return true;
+        }
+    }
+
+    ,/**
+     * Checks that a horizontal domino has at least one liberty
+     */
+    ishorizontalDominoHappy: function(dominoBlock) {
+        var canonizedBoard = this.canonize();
+        var topToTheLeft = dominoBlock[0]+1;
+        var blockedLeft = false;
+        var blockedRight = false;
+        var blockedTopRight = false;
+        var blockedTopLeft = false;
+        var blockedBottomLeft = false;
+        var blockedBottomRight = false;
+        for (var blockIndex = 0; blockIndex < canonizedBoard.blockedSpaces.length; blockIndex++) {
+            var block = canonizedBoard.blockedSpaces[blockIndex]
+            var top = dominoBlock[1]-1;
+            var bottom = dominoBlock[1]+1;
+            var right = dominoBlock[0]+1;
+            var left = dominoBlock[0]-1;
+            var allTheWayRight = dominoBlock[0]+2;
+            if(((block[0] == dominoBlock[0]) && (block[1] == top)) || (dominoBlock[1] == 0)) {
+                blockedTopLeft = true;
+            }
+            if(((block[0] == right) && (block[1] == top)) || (dominoBlock[1] == 0)) {
+                blockedTopRight = true;
+            }
+            if(((block[0] == left) && (block[1] == dominoBlock[1])) || (dominoBlock[0] == 0)) {
+                blockedLeft = true;
+            }
+            if(((block[0] == allTheWayRight) && (block[1] == dominoBlock[1])) || (dominoBlock[0] == this.width-2)) {
+                blockedRight = true;
+            }
+            if(((block[0] == dominoBlock[0]) && (block[1] == bottom)) || (dominoBlock[1] == this.height-1)) {
+                blockedBottomLeft = true;
+            }
+            if(((block[0] == right) && (block[1] == bottom)) || (dominoBlock[1] == this.height-1)) {
+                blockedBottomRight = true;
+            }
+        }
+        if((blockedLeft == true) && (blockedRight == true) && (blockedTopLeft == true) && (blockedTopRight == true) && (blockedBottomLeft == true) && (blockedBottomRight == true)) {
+            return false;
+        } else {
+            return true;
+        }
+    }
+
+    ,/**
+     * Checks that every domino on the board has at least one liberty
+     */
+     isBoardHappy: function() {
+         var happyDominoes = 0;
+         if(this.dominoes[0] != undefined) {
+             for(var i = 0; i < this.dominoes[0].length; i++) {
+                 if(this.isVerticalDominoHappy(this.dominoes[0][i])) {
+                     happyDominoes++;
+                 }
+             }
+        }
+         if(this.dominoes[1] != undefined) {
+             for(var i = 0; i < this.dominoes[1].length; i++) {
+                 if(this.ishorizontalDominoHappy(this.dominoes[1][i])) {
+                     happyDominoes++;
+                 }
+             }
+        }
+        var verticalDominoes = 0;
+        if (this.dominoes[0] != undefined) {
+            verticalDominoes = this.dominoes[0].length;
+        }
+        var horizontalDominoes = 0;
+        if (this.dominoes[1] != undefined) {
+            horizontalDominoes = this.dominoes[1].length;
+        }
+         if(happyDominoes == (verticalDominoes + horizontalDominoes)) {
+             return true;
+         } else {
+             return false;
+         }
+     }
+
+
+    ,/**
+     * Gets a list of single-domino placement options for the next player.  Does not return entire game states!
+     */
+    getDominoMoves: function(playerId) {
+        var moves = new Array();
+        //don't look at the bottom row for vertical player
+        for (var row = 0; row < this.height + playerId - 1; row++) {
+            //don't look at the right-most column for horizontal
+            for (var column = 0; column < this.width - playerId; column++) {
+                //the two spaces the domino would take up
+                var dominoSpaces = new Array();
+                dominoSpaces.push([column, row]);
+                dominoSpaces.push([column + playerId, row + (1-playerId)]);
+                //create the version of this with dominoes replaced by blocked spots
+                var allBlocks = this.canonize();
+                allBlocks.dominoes = JSON.parse(JSON.stringify(this.dominoes));
+                var blocked = false;
+                var blocksAroundDomino = 0;
+                for (var blockIndex = 0; blockIndex < allBlocks.blockedSpaces.length; blockIndex++) {
+
+                    var block = allBlocks.blockedSpaces[blockIndex]
+                    for (var i= 0; i < dominoSpaces.length; i++) {
+
+                        universalBlock = block;
+                        universalDomino = dominoSpaces[i];
+                        var dominoSpace = dominoSpaces[i];
+
+                        if (block[0] == dominoSpace[0] && block[1] == dominoSpace[1]) {
+                            blocked = true;
+                            break;
+                        }
+                    }
+                    if (blocked) break;
+                }
+                if (!blocked) {
+                    allBlocks.dominoes[playerId].push([column, row]);
+                    if(allBlocks.isBoardHappy()) {
+                        moves.push([column, row]);
+                    }
+                    else{
+                        allBlocks.dominoes[playerId].pop();
+                    }
+                }
+            }
+        }
+        return moves;
+    }
+
+    ,/**
+     * clone
+     */
+    clone: function() {
+        //
+        return new NoCanDo(this.width, this.height, this.dominoes, this.blockedSpaces);
+    }
+
+    ,/**
+     * equals
+     */
+    equals: function(other) {
+        //Check that we have matching dominoes.
+
+        //check that other has all of our dominoes
+        for (var player = 0; player < this.dominoes.length; player++) {
+            for (var i = 0; i < this.dominoes[player].length; i++) {
+                var domino = this.dominoes[player][i];
+                var otherHasDomino = false;
+                for (var j = 0; j < other.dominoes[player].length; j++) {
+                    var otherDomino = other.dominoes[player][j];
+                    if (domino[0] == otherDomino[0] && domino[1] == otherDomino[1]) {
+                        otherHasDomino = true;
+                        break;
+                    }
+                }
+                if (!otherHasDomino) return false;
+            }
+        }
+
+        //now check that we have all of other's dominoes
+        //(We don't compare sizes in case there are any repeats.)
+        for (var player = 0; player < other.dominoes.length; player++) {
+            for (var i = 0; i < other.dominoes[player].length; i++) {
+                var otherDomino = other.dominoes[player][i];
+                var thisHasDomino = false;
+                for (var j = 0; j < this.dominoes[player].length; j++) {
+                    var domino = this.dominoes[player][j];
+                    if (domino[0] == otherDomino[0] && domino[1] == otherDomino[1]) {
+                        thisHasDomino = true;
+                        break;
+                    }
+                }
+                if (!thisHasDomino) return false;
+            }
+        }
+
+        //now check that blocked spaces match
+
+        //check that other has all of our blocked spaces
+        for (var i = 0; i < this.blockedSpaces.length; i++) {
+            var block = this.blockedSpaces[i];
+            var hasBlock = false;
+            for (var j = 0; j < other.blockedSpaces.length; j++) {
+                var otherBlock = other.blockedSpaces[j];
+                if (block[0] == otherBlock[0] && block[1] == otherBlock[1]) {
+                    hasBlock = true;
+                    break;
+                }
+            }
+            if (!hasBlock) return false;
+        }
+
+        //check that this has all of other's blocked spaces
+        for (var i = 0; i < other.blockedSpaces.length; i++) {
+            var otherBlock = other.blockedSpaces[i]
+            var hasBlock = false;
+            for (var j = 0; j < this.blockedSpaces.length; j++) {
+                var block = this.blockedSpaces[j];
+                if (block[0] == otherBlock[0] && block[1] == otherBlock[1]) {
+                    hasBlock = true;
+                    break;
+                }
+            }
+            if (!hasBlock) return false;
+        }
+
+        //all things match! :)
+        return true;
+    }
+
+
+}); //end of NoCanDo class
+
 
 var InteractiveSVGDomineeringView = Class.create({
-    
+
     initialize: function(position) {
         this.position = position;
         this.selectedTile = undefined;
     }
-    
+
     ,/**
      * Draws the checker board and assigns the listener
      */
@@ -1679,11 +3056,11 @@ var InteractiveSVGDomineeringView = Class.create({
         }
         var svgNS = "http://www.w3.org/2000/svg";
         var boardSvg = document.createElementNS(svgNS, "svg");
-        //now add the new board to the container 
+        //now add the new board to the container
         containerElement.appendChild(boardSvg);
         boardSvg.setAttributeNS(null, "width", 10 + this.position.width * 100);
         boardSvg.setAttributeNS(null, "height", 10 + this.position.height * 100);
-        
+
         //draw the checker tiles
         for (var i = 0; i < this.position.width; i++) {
             for (var j = 0; j < this.position.height; j++) {
@@ -1702,10 +3079,10 @@ var InteractiveSVGDomineeringView = Class.create({
                     var player = listener;
                     checkerTile.onclick = function(event) {player.handleClick(event);}
                 }
-                
+
             }
         }
-        
+
         //draw the dominoes
         for (var playerId = 0; playerId < 2; playerId++) {
             for (var i =0; i < this.position.dominoes[playerId].length; i++) {
@@ -1724,9 +3101,10 @@ var InteractiveSVGDomineeringView = Class.create({
                 boardSvg.appendChild(dominoRect);
             }
         }
-        
+
         //draw the blocked spaces
         for (var i = 0; i < this.position.blockedSpaces.length; i++) {
+            // console.log("Adding the block: " + this.position.blockedSpaces[i]);
             var block = this.position.blockedSpaces[i];
             var column = block[0];
             var row = block[1];
@@ -1738,18 +3116,18 @@ var InteractiveSVGDomineeringView = Class.create({
             blockRect.setAttributeNS(null, "class", "domino");
             boardSvg.appendChild(blockRect);
         }
-        
+
     }
-    
+
     ,/**
      * Selects a tile.
      */
     selectTile: function(tile) {
         this.selectedTile = tile;
         this.selectedTile.oldColor = this.selectedTile.style.fill;
-        this.selectedTile.style.fill = "gray";
+        this.selectedTile.style.fill = "red";
     }
-    
+
     ,/**
      * Deselect piece.
      */
@@ -1757,9 +3135,9 @@ var InteractiveSVGDomineeringView = Class.create({
         this.selectedTile.style.fill = this.selectedTile.oldColor;
         this.selectedTile = undefined;
     }
-    
+
     ,/**
-     * 
+     *
      */
     getNextPositionFromElementLocations: function(firstElement, secondElement, containerElement, currentPlayer) {
         //measure the distance between rectangle corners
@@ -1777,7 +3155,7 @@ var InteractiveSVGDomineeringView = Class.create({
             return null;
         }
     }
-    
+
     ,/**
      * Handles a mouse click.
      */
@@ -1822,21 +3200,21 @@ var InteractiveSVGDomineeringViewFactory = Class.create({
     initialize: function() {
         //do nothing
     }
-    
+
     ,/**
      * Returns an interactive view
      */
     getInteractiveBoard: function(position) {
         return new InteractiveSVGDomineeringView(position);
     }
-    
+
     ,/**
      * Returns a view.
      */
     getView: function(position) {
         return this.getInteractiveBoard(position);
     }
-    
+
 }); //end of InteractiveSVGDomineeringViewFactory
 
 /**
@@ -1869,6 +3247,51 @@ function newDomineeringGame() {
     var leftPlayer = parseInt(getSelectedRadioValue(controlForm.elements['leftPlayer']));
     var rightPlayer =  parseInt(getSelectedRadioValue(controlForm.elements['rightPlayer']));
     game = new Domineering(width, height);
+    var players = [playerOptions[leftPlayer], playerOptions[rightPlayer]];
+    ref = new Referee(game, players, viewFactory, "gameCanvas", $('messageBox'), controlForm);
+}
+
+function newConnectFourGame() {
+    var viewFactory = new InteractiveSVGConnectFourViewFactory();
+    var playDelay = 1000;
+    var playerOptions = [new HumanPlayer(viewFactory), new RandomPlayer(playDelay), new DepthSearchPlayer(playDelay, 1), new DepthSearchPlayer(playDelay, 3), new DepthSearchPlayer(playDelay, 5), new DepthSearchPlayer(200, 7)];
+    var width = parseInt($('boardWidth').value);
+    var height = parseInt($('boardHeight').value);
+    var controlForm = $('gameOptions');
+    var leftPlayer = parseInt(getSelectedRadioValue(controlForm.elements['leftPlayer']));
+    var rightPlayer =  parseInt(getSelectedRadioValue(controlForm.elements['rightPlayer']));
+    game = new ConnectFour(width, height);
+    var players = [playerOptions[leftPlayer], playerOptions[rightPlayer]];
+    ref = new Referee(game, players, viewFactory, "gameCanvas", $('messageBox'), controlForm);
+}
+
+function newManalathGame() {
+    var viewFactory = new InteractiveManalathViewFactory();
+    var playDelay = 1000;
+    var playerOptions = [new HumanPlayer(viewFactory), new RandomPlayer(playDelay), new DepthSearchPlayer(playDelay, 1), new DepthSearchPlayer(playDelay, 3), new DepthSearchPlayer(playDelay, 5), new DepthSearchPlayer(200, 7)];
+    var width = parseInt($('boardWidth').value);
+    var height = parseInt($('boardHeight').value);
+    var controlForm = $('gameOptions');
+    var leftPlayer = parseInt(getSelectedRadioValue(controlForm.elements['leftPlayer']));
+    var rightPlayer =  parseInt(getSelectedRadioValue(controlForm.elements['rightPlayer']));
+    game = new Manalath(width, height);
+    var players = [playerOptions[leftPlayer], playerOptions[rightPlayer]];
+    ref = new Referee(game, players, viewFactory, "gameCanvas", $('messageBox'), controlForm);
+}
+
+/**
+ * Launches a new NoCanDo Game.
+ */
+function newNoCanDoGame() {
+    var viewFactory = new InteractiveSVGDomineeringViewFactory();
+    var playDelay = 1000;
+    var playerOptions = [new HumanPlayer(viewFactory), new RandomPlayer(playDelay), new DepthSearchPlayer(playDelay, 1), new DepthSearchPlayer(playDelay, 3), new DepthSearchPlayer(playDelay, 5), new DepthSearchPlayer(200, 7)];
+    var width = parseInt($('boardWidth').value);
+    var height = parseInt($('boardHeight').value);
+    var controlForm = $('gameOptions');
+    var leftPlayer = parseInt(getSelectedRadioValue(controlForm.elements['leftPlayer']));
+    var rightPlayer =  parseInt(getSelectedRadioValue(controlForm.elements['rightPlayer']));
+    game = new NoCanDo(width, height);
     var players = [playerOptions[leftPlayer], playerOptions[rightPlayer]];
     ref = new Referee(game, players, viewFactory, "gameCanvas", $('messageBox'), controlForm);
 }
@@ -1906,19 +3329,19 @@ function newClobberGame(isReverse) {
     } else {
         var game = new Clobber(width, height);
     }
-        
+
     var players = [playerOptions[leftPlayer], playerOptions[rightPlayer]];
     var ref = new Referee(game, players, viewFactory, "clobberBoard", $('messageBox'), controlForm);
 }
-    
+
 
 var InteractiveSVGClobberView = Class.create({
-    
+
     initialize: function(position) {
         this.position = position;
         this.selectedPiece = undefined;
     }
-    
+
     /**
      * Draws the checker board and assigns the listener
      */
@@ -1929,11 +3352,11 @@ var InteractiveSVGClobberView = Class.create({
         }
         var svgNS = "http://www.w3.org/2000/svg";
         var boardSvg = document.createElementNS(svgNS, "svg");
-        //now add the new board to the container 
+        //now add the new board to the container
         containerElement.appendChild(boardSvg);
         boardSvg.setAttributeNS(null, "width", 10 + this.position.width * 100);
         boardSvg.setAttributeNS(null, "height", 10 + this.position.height * 100);
-        
+
         //draw the checker tiles
         for (var i = 0; i < this.position.width; i++) {
             for (var j = 0; j < this.position.height; j++) {
@@ -1948,14 +3371,14 @@ var InteractiveSVGClobberView = Class.create({
                 checkerTile.setAttributeNS(null, "height", "100");
                 checkerTile.setAttributeNS(null, "class", parityString + "Checker");
                 boardSvg.appendChild(checkerTile);
-                
+
             }
         }
-        
+
         //draw the draughts
         for (var i = 0; i < this.position.draughts.length; i++) {
             for (var j = 0; j < this.position.draughts[i].length; j++) {
-                
+
                 var draught = document.createElementNS(svgNS, "circle");
                 var x = this.position.draughts[i][j][0];
                 var y = this.position.draughts[i][j][1];
@@ -1976,7 +3399,7 @@ var InteractiveSVGClobberView = Class.create({
             }
         }
     }
-    
+
     ,/**
      * Selects a piece.
      */
@@ -1984,20 +3407,20 @@ var InteractiveSVGClobberView = Class.create({
         this.selectedPiece = piece;
         this.selectedPiece.style.stroke = "Purple";
     }
-    
+
     ,/**
      * Deselect piece.
      */
     deselectPiece: function() {
         if (this.selectedPiece != undefined) {
-            this.selectedPiece.style.stroke = "Black";
+            this.selectedPiece.style.stroke = "Blue";
             this.selectedPiece = undefined;
         }
     }
-    
+
     /**
      *  Gets the next position using piece locations.
-     */ 
+     */
     ,getNextPositionFromPieceLocations: function(firstPiece, secondPiece, containerElement) {
         var xDistance = Math.abs(secondPiece.cx.baseVal.value - firstPiece.cx.baseVal.value);
         var yDistance = Math.abs(secondPiece.cy.baseVal.value - firstPiece.cy.baseVal.value);
@@ -2016,14 +3439,14 @@ var InteractiveSVGClobberView = Class.create({
             }
             this.deselectPiece();
             return new Clobber(this.position.width, this.position.height, nextPieces);
-            
+
         } else {
             this.deselectPiece();
             return null;
         }
-        
+
     }
-    
+
     ,/**
      * Handles a mouse click.
      */
@@ -2059,7 +3482,7 @@ var InteractiveSVGClobberView = Class.create({
                     }
                     this.deselectPiece();
                     return new Clobber(this.position.width, this.position.height, nextPieces);
-                    
+
                 } else {
                     this.deselectPiece();
                     return null;
@@ -2074,7 +3497,7 @@ var InteractiveSVGClobberView = Class.create({
 }); //end of InteractiveSVGClobberView
 
 var InteractiveSVGReverseClobberView = Class.create(InteractiveSVGClobberView, {
-    
+
     /**
      * Handles a mouse click.
      */
@@ -2110,7 +3533,7 @@ var InteractiveSVGReverseClobberView = Class.create(InteractiveSVGClobberView, {
                     }
                     this.deselectPiece();
                     return new ReverseClobber(this.position.width, this.position.height, nextPieces);
-                    
+
                 } else {
                     this.deselectPiece();
                     return null;
@@ -2130,7 +3553,7 @@ var InteractiveClobberViewFactory = Class.create({
     initialize: function(isReverse) {
         this.isReverse = isReverse || false;
     }
-    
+
     ,/**
      * Returns an interactive view
      */
@@ -2141,14 +3564,14 @@ var InteractiveClobberViewFactory = Class.create({
             return new InteractiveSVGClobberView(position);
         }
     }
-    
+
     ,/**
      * Returns a view.
      */
     getView: function(position) {
         return this.getInteractiveBoard(position);
     }
-    
+
 }); //end of InteractiveClobberViewFactory
 
 
@@ -2166,9 +3589,9 @@ var Referee = Class.create({
         viewElementId = viewElementId || "gameBoard";
         this.viewElement = document.getElementById(viewElementId);
         this.currentPlayer = CombinatorialGame.prototype.LEFT;
-        this.messageContainer = messageContainer || document.createElement("p"); 
+        this.messageContainer = messageContainer || document.createElement("p");
         this.optionsPanel = optionsPanel || document.createElement("p");
-        
+
         this.setOptionsAbleness(false);
         this.setStringMessage(this.position.playerNames[this.currentPlayer] + " goes first.");
         this.view = this.viewFactory.getView(this.position);
@@ -2178,7 +3601,7 @@ var Referee = Class.create({
         console.log("In ref!");
         this.requestNextMove();
     }
-    
+
     ,/**
      * Determines whether the options will be enabled.
      */
@@ -2189,21 +3612,21 @@ var Referee = Class.create({
             descendants[i].disabled = areDisabled;
         }
     }
-    
+
     ,/**
      * Sets the message to players.
      */
     setStringMessage: function(message) {
         this.messageContainer.innerHTML = message;
     }
-    
+
     ,/**
      * Gets the element that contains the view for this.
      */
     getViewContainer: function() {
         return this.viewElement;
     }
-    
+
     ,/**
      * Sets fields.
      */
@@ -2215,6 +3638,7 @@ var Referee = Class.create({
                 this.view = this.viewFactory.getView(this.position);
                 this.view.draw(this.viewElement);
             }
+
             if (this.position.getOptionsForPlayer(this.currentPlayer).length == 0) {
                 this.setStringMessage("There are no moves for " + this.position.playerNames[this.currentPlayer] + ".  " + this.position.playerNames[1-this.currentPlayer] + " wins!");
                 this.setOptionsAbleness(true);
@@ -2235,7 +3659,7 @@ var Referee = Class.create({
             }
         }
     }
-    
+
     ,/**
      * Requests the next move.
      */
@@ -2244,7 +3668,7 @@ var Referee = Class.create({
         //perform a delayed call so that the display will redraw
         window.setTimeout(function() {self.requestNextMoveHelper();}, 20);
     }
-    
+
     /**
      * Helper for requestNextMove
      */
@@ -2260,24 +3684,24 @@ var HumanPlayer = Class.create({
     /**
      * Constructor
      */
-    initialize: function(viewFactory) { 
+    initialize: function(viewFactory) {
         this.viewFactory = viewFactory;
     }
-    
+
     /**
      * Whether this uses a view.
      */
     ,hasView: function() {
         return true;
     }
-    
+
     /**
      * Returns the view.
      */
     ,getView: function() {
         return this.view;
     }
-    
+
     /**
      * Chooses a move.
      */
@@ -2288,7 +3712,7 @@ var HumanPlayer = Class.create({
         this.view = this.viewFactory.getInteractiveBoard(position);
         this.view.draw(this.referee.getViewContainer(), this);
     }
-   
+
     /**
      * Handle a mouse click, possibly getting a new position.
      */
@@ -2297,7 +3721,7 @@ var HumanPlayer = Class.create({
         this.sendMoveToRef(option);
         console.log("Human sent move to the ref.");
     }
-    
+
     /**
      * Sends a move to the Referee.  Confirms that option is a legal move.
      */
@@ -2309,12 +3733,15 @@ var HumanPlayer = Class.create({
         } else {
             //TODO: comment this out for production
             console.log("Tried to move to a non-option, child stored in global childGame; parent stored in global parentGame");
+            // console.log(universalBlock[0]);
+            // console.log(universalDomino[0]);
+            // console.log("Blocks around domino: " + universalBlocksAroundDomino);
             childGame = option;
             parentGame = this.position;
             return;
         }
     }
-    
+
     /**
      * toString
      */
@@ -2327,20 +3754,20 @@ var HumanPlayer = Class.create({
  * Abstract class for an automated player.
  */
 var ComputerPlayer = Class.create({
-   
+
     /**
      * Handle a mouse click, possibly getting a new position.
      */
     handleClick: function(event) { /*do nothing */ }
-    
+
     ,hasView: function() {
         return false;
     }
-    
+
 }); //end of Computer Player
 
 /**
- *  
+ *
  */
 var RandomPlayer = Class.create(ComputerPlayer, {
     /**
@@ -2350,7 +3777,7 @@ var RandomPlayer = Class.create(ComputerPlayer, {
     initialize: function(delay) {
         this.delayMilliseconds = delay;
     }
-    
+
     /**
      * Chooses a move.
      */
@@ -2362,7 +3789,7 @@ var RandomPlayer = Class.create(ComputerPlayer, {
         //while (!arrayForSemaphore[0]) { /* do nothing */}
         //return options[randomIndex];
     }
-    
+
 }); //end of RandomPlayer
 
 
@@ -2459,7 +3886,7 @@ var DepthSearchPlayer = Class.create(ComputerPlayer, {
         this.delayMilliseconds = delay;
         this.maxDepth = maxDepth;
     }
-    
+
     /**
      * Chooses a move.
      */
@@ -2476,7 +3903,7 @@ var DepthSearchPlayer = Class.create(ComputerPlayer, {
         }
         window.setTimeout(function(){referee.moveTo(option);}, this.delayMilliseconds);
     }
-    
+
     ,/**
      * Returns a winning move.
      */
@@ -2494,7 +3921,7 @@ var DepthSearchPlayer = Class.create(ComputerPlayer, {
         }
         return null;
     }
-    
+
     ,/**
      * Returns whether a player can win, given the depth.  Can return a boolean or "maybe".
      */
@@ -2519,9 +3946,9 @@ var DepthSearchPlayer = Class.create(ComputerPlayer, {
         } else {
             return false;
         }
-        
+
     }
-    
+
 });
 
 /**
@@ -2545,15 +3972,15 @@ function getRadioPlayerOptions(playerId) {
 /**
  * Gets an HTML Element for 1-d board sizes.
  */
-function createBasicOneDimensionalSizeOptions(minSize, maxSize, defaultSize) {  
+function createBasicOneDimensionalSizeOptions(minSize, maxSize, defaultSize) {
     defaultSize = defaultSize || (minSize + maxSize) / 2;
-    
+
     var container = document.createElement("div");
-    
+
     var sizeElement = document.createDocumentFragment();
     var sizeRange = createRangeInput(minSize, maxSize, defaultSize, "boardSize");
     container.appendChild(createGameOptionDiv("Size", sizeRange));
-    
+
     //duplicated code from createBasicGridGameOptions
     var leftPlayerElement = document.createDocumentFragment();
     leftPlayerElement.appendChild(document.createTextNode("(Blue plays first.)"));
@@ -2561,10 +3988,10 @@ function createBasicOneDimensionalSizeOptions(minSize, maxSize, defaultSize) {
     var leftRadio = getRadioPlayerOptions(CombinatorialGame.prototype.LEFT);
     leftPlayerElement.appendChild(leftRadio);
     container.appendChild(createGameOptionDiv("Blue:", leftPlayerElement));
-    
+
     var rightRadio = getRadioPlayerOptions(CombinatorialGame.prototype.RIGHT);
     container.appendChild(createGameOptionDiv("Red:", rightRadio));
-    
+
     var startButton = document.createElement("input");
     startButton.type = "button";
     startButton.id = "starter";
@@ -2572,7 +3999,7 @@ function createBasicOneDimensionalSizeOptions(minSize, maxSize, defaultSize) {
     startButton.onclick = newGame;
     container.appendChild(startButton);
     //end duplicated code.
-    
+
     return container;
 }
 
@@ -2584,34 +4011,151 @@ function createBasicGridGameOptions(minWidth, maxWidth, defaultWidth, minHeight,
     minHeight = minHeight || minWidth;
     maxHeight = maxHeight || maxWidth;
     defaultHeight = defaultHeight || defaultWidth;
-    
+
     var container = document.createElement("div");
-    
+
     var widthElement = document.createDocumentFragment();
     var widthRange = createRangeInput(minWidth, maxWidth, defaultWidth, "boardWidth");
     container.appendChild(createGameOptionDiv("Width", widthRange));
-    
+
     var heightElement = document.createDocumentFragment();
     var heightRange = createRangeInput(minHeight, maxHeight, defaultHeight, "boardHeight");
     container.appendChild(createGameOptionDiv("Height", heightRange));
-    
+
     var leftPlayerElement = document.createDocumentFragment();
     leftPlayerElement.appendChild(document.createTextNode("(Blue plays first.)"));
     leftPlayerElement.appendChild(document.createElement("br"));
     var leftRadio = getRadioPlayerOptions(CombinatorialGame.prototype.LEFT);
     leftPlayerElement.appendChild(leftRadio);
     container.appendChild(createGameOptionDiv("Blue:", leftPlayerElement));
-    
+
     var rightRadio = getRadioPlayerOptions(CombinatorialGame.prototype.RIGHT);
     container.appendChild(createGameOptionDiv("Red:", rightRadio));
-    
+
     var startButton = document.createElement("input");
     startButton.type = "button";
     startButton.id = "starter";
     startButton.value = "Start Game";
     startButton.onclick = newGame;
     container.appendChild(startButton);
-    
+
+    return container;
+}
+
+/**
+ * Gets an HTML Element containing the basic game options for a 2-dimensional grid.
+ */
+function createBasicGridGameOptionsForNoCanDo(minWidth, maxWidth, defaultWidth, minHeight, maxHeight, defaultHeight) {
+    //do some normalization for games with only one size parameter (e.g. Atropos)
+    minHeight = minHeight || minWidth;
+    maxHeight = maxHeight || maxWidth;
+    defaultHeight = defaultHeight || defaultWidth;
+
+    var container = document.createElement("div");
+
+    var widthElement = document.createDocumentFragment();
+    var widthRange = createRangeInput(minWidth, maxWidth, defaultWidth, "boardWidth");
+    container.appendChild(createGameOptionDiv("Width", widthRange));
+
+    var heightElement = document.createDocumentFragment();
+    var heightRange = createRangeInput(minHeight, maxHeight, defaultHeight, "boardHeight");
+    container.appendChild(createGameOptionDiv("Height", heightRange));
+
+    var leftPlayerElement = document.createDocumentFragment();
+    leftPlayerElement.appendChild(document.createTextNode("(Blue plays first.)"));
+    leftPlayerElement.appendChild(document.createElement("br"));
+    var leftRadio = getRadioPlayerOptions(CombinatorialGame.prototype.LEFT);
+    leftPlayerElement.appendChild(leftRadio);
+    container.appendChild(createGameOptionDiv("Vertical:", leftPlayerElement));
+
+    var rightRadio = getRadioPlayerOptions(CombinatorialGame.prototype.RIGHT);
+    container.appendChild(createGameOptionDiv("Horizontal:", rightRadio));
+
+    var startButton = document.createElement("input");
+    startButton.type = "button";
+    startButton.id = "starter";
+    startButton.value = "Start Game";
+    startButton.onclick = newGame;
+    container.appendChild(startButton);
+
+    return container;
+}
+
+/**
+ * Gets an HTML Element containing the basic game options for a 2-dimensional grid.
+ */
+function createBasicGridGameOptionsForConnectFour(minWidth, maxWidth, defaultWidth, minHeight, maxHeight, defaultHeight) {
+    //do some normalization for games with only one size parameter (e.g. Atropos)
+    minHeight = minHeight || minWidth;
+    maxHeight = maxHeight || maxWidth;
+    defaultHeight = defaultHeight || defaultWidth;
+
+    var container = document.createElement("div");
+
+    var widthElement = document.createDocumentFragment();
+    var widthRange = createRangeInput(minWidth, maxWidth, defaultWidth, "boardWidth");
+    container.appendChild(createGameOptionDiv("Width", widthRange));
+
+    var heightElement = document.createDocumentFragment();
+    var heightRange = createRangeInput(minHeight, maxHeight, defaultHeight, "boardHeight");
+    container.appendChild(createGameOptionDiv("Height", heightRange));
+
+    var leftPlayerElement = document.createDocumentFragment();
+    leftPlayerElement.appendChild(document.createTextNode("(Yellow plays first.)"));
+    leftPlayerElement.appendChild(document.createElement("br"));
+    var leftRadio = getRadioPlayerOptions(CombinatorialGame.prototype.LEFT);
+    leftPlayerElement.appendChild(leftRadio);
+    container.appendChild(createGameOptionDiv("Yellow:", leftPlayerElement));
+
+    var rightRadio = getRadioPlayerOptions(CombinatorialGame.prototype.RIGHT);
+    container.appendChild(createGameOptionDiv("Red:", rightRadio));
+
+    var startButton = document.createElement("input");
+    startButton.type = "button";
+    startButton.id = "starter";
+    startButton.value = "Start Game";
+    startButton.onclick = newGame;
+    container.appendChild(startButton);
+
+    return container;
+}
+
+/**
+ * Gets an HTML Element containing the basic game options for a 2-dimensional grid.
+ */
+function createBasicGridGameOptionsForManalath(minWidth, maxWidth, defaultWidth, minHeight, maxHeight, defaultHeight) {
+    //do some normalization for games with only one size parameter (e.g. Atropos)
+    minHeight = minHeight || minWidth;
+    maxHeight = maxHeight || maxWidth;
+    defaultHeight = defaultHeight || defaultWidth;
+
+    var container = document.createElement("div");
+
+    var widthElement = document.createDocumentFragment();
+    var widthRange = createRangeInput(minWidth, maxWidth, defaultWidth, "boardWidth");
+    container.appendChild(createGameOptionDiv("Width", widthRange));
+
+    var heightElement = document.createDocumentFragment();
+    var heightRange = createRangeInputForManalath(minHeight, maxHeight, defaultHeight, "boardHeight");
+    container.appendChild(createGameOptionDiv("Height", heightRange));
+
+    var leftPlayerElement = document.createDocumentFragment();
+    leftPlayerElement.appendChild(document.createTextNode("(Blue plays first.)"));
+    leftPlayerElement.appendChild(document.createElement("br"));
+    var leftRadio = getRadioPlayerOptions(CombinatorialGame.prototype.LEFT);
+    leftPlayerElement.appendChild(leftRadio);
+    container.appendChild(createGameOptionDiv("Blue:", leftPlayerElement));
+
+    var rightRadio = getRadioPlayerOptions(CombinatorialGame.prototype.RIGHT);
+    container.appendChild(createGameOptionDiv("Red:", rightRadio));
+
+    var startButton = document.createElement("input");
+    startButton.type = "button";
+    startButton.id = "starter";
+    startButton.value = "Start Game";
+    startButton.onclick = newGame;
+    container.appendChild(startButton);
+
     return container;
 }
 
@@ -2621,6 +4165,26 @@ function createBasicGridGameOptions(minWidth, maxWidth, defaultWidth, minHeight,
  */
 function createRangeInput(min, max, defaultValue, id) {
     var slider = new PaitSlider(min, max, 1, defaultValue, id);
+    return slider.toElement();
+    /*
+    var range = document.createElement("input");
+    range.type = "range";
+    range.min = min;
+    range.max = max;
+    range.value = defaultValue;
+    if (id != undefined) {
+        range.id = id;
+    }
+    return range;
+    */
+}
+
+/**
+ * Creates an input range element.
+ * TODO: move to paithanLibraries
+ */
+function createRangeInputForManalath(min, max, defaultValue, id) {
+    var slider = new PaitSlider(min, max, 2, defaultValue, id);
     return slider.toElement();
     /*
     var range = document.createElement("input");
@@ -2687,4 +4251,3 @@ function hideRules(event) {
     event.target.onclick = showRules;
     event.target.innerHTML = "Show";
 }
-
