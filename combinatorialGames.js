@@ -2365,6 +2365,88 @@ var RandomPlayer = Class.create(ComputerPlayer, {
     
 }); //end of RandomPlayer
 
+
+
+/**
+ *  Updated Brute-Force AI to play games.  This one will look for both wins (to head towards) and losses (to avoid).
+ */
+var DepthSearchPlayer = Class.create(ComputerPlayer, {
+    /**
+     * Constructor
+     * The delay doesn't work!  There's no way to pause a fruitful function.
+     */
+    initialize: function(delay, maxDepth) {
+        this.delayMilliseconds = delay;
+        this.maxDepth = maxDepth;
+    }
+    
+    /**
+     * Chooses a move.
+     */
+    ,givePosition: function(playerIndex, position, referee) {
+        var winningMove = this.getWinningMove(playerIndex, position);
+        var option;
+        if (winningMove != null) {
+            option = winningMove;
+            console.log("Found a winning move!");
+        } else {
+            var options = position.getOptionsForPlayer(playerIndex);
+            var randomIndex = Math.floor(Math.random() * options.length);
+            option = options[randomIndex];
+        }
+        window.setTimeout(function(){referee.moveTo(option);}, this.delayMilliseconds);
+    }
+    
+    /**
+     * Returns a subset of moves.  If I can find a winning move, I return that one.  Otherweise, if I find moves that don't lead to death, then I return
+    
+    ,/**
+     * Returns a winning move.
+     */
+    getWinningMove: function(playerIndex, position) {
+        var options = position.getOptionsForPlayer(playerIndex);
+        var opponentHasWinningMove = false;
+        for (var i = 0; i < options.length; i++) {
+            var option = options[i];
+            var otherWins = this.playerCanWin(1 - playerIndex, option, 1);
+            if (otherWins == "maybe") {
+                //do nothing
+            } else if (otherWins == false) {
+                return option;
+            }
+        }
+        return null;
+    }
+    
+    ,/**
+     * Returns whether a player can win, given the depth.  Can return a boolean or "maybe".
+     */
+    playerCanWin: function(playerIndex, position, depth) {
+        if (depth > this.maxDepth) {
+            //console.log("Hit max search depth.");
+            return "maybe";
+        }
+        var maybeWins = false;
+        var options = position.getOptionsForPlayer(playerIndex);
+        for (var i = 0; i < options.length; i++) {
+            var option = options[i];
+            var otherWins = this.playerCanWin(1-playerIndex, option, depth + 1);
+            if (otherWins == "maybe") {
+                maybeWins = true;
+            } else if (!otherWins) {
+                return true;
+            }
+        }
+        if (maybeWins) {
+            return "maybe";
+        } else {
+            return false;
+        }
+        
+    }
+    
+});
+
 /**
  *  Brute-Force AI to play games.
  */
