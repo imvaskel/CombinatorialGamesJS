@@ -2041,7 +2041,7 @@ var Manalath = Class.create(CombinatorialGame, {
         }
         this.width = width;
         this.height = height;
-        this.playerNames = ["Red", "Blue"];
+        this.playerNames = ["Blue", "Red"];
     }
 
     ,/**
@@ -2050,10 +2050,10 @@ var Manalath = Class.create(CombinatorialGame, {
      toString: function() {
         for (var i = 0; i < this.blockedSpaces.length; i++) {
             if(i == 0) {
-                string = "Red player currently has blocks at: ";
+                string = "Blue player currently has blocks at: ";
             }
             else {
-                string = "Blue player currently has blocks at: ";
+                string = "Red player currently has blocks at: ";
             }
             for (var j = 0; j < this.blockedSpaces[i].length; j++) {
                 string += this.blockedSpaces[i][j] + ",";
@@ -2444,8 +2444,8 @@ var Manalath = Class.create(CombinatorialGame, {
         return clone;
     }
 });
-Manalath.prototype.RED = 0;
-Manalath.prototype.BLUE = 1;
+Manalath.prototype.BLUE = 0;
+Manalath.prototype.RED = 1;
 Manalath.prototype.UNCOLORED = 2;
 
 
@@ -4194,7 +4194,7 @@ function createBasicGridGameOptionsForNoCanDo(minWidth, maxWidth, defaultWidth, 
     container.appendChild(createGameOptionDiv("Height", heightRange));
 
     var leftPlayerElement = document.createDocumentFragment();
-    leftPlayerElement.appendChild(document.createTextNode("(Blue plays first.)"));
+    leftPlayerElement.appendChild(document.createTextNode("(Vertical plays first.)"));
     leftPlayerElement.appendChild(document.createElement("br"));
     var leftRadio = getRadioPlayerOptions(CombinatorialGame.prototype.LEFT);
     leftPlayerElement.appendChild(leftRadio);
