@@ -3794,6 +3794,167 @@ var RandomPlayer = Class.create(ComputerPlayer, {
 
 
 
+var RESULT_WIN = 1;
+var RESULT_DUNNO = 0;
+var RESULT_LOSS = -1;
+
+//abstract version
+var BestMoveAndResults = Class.create( {
+    
+    /**
+     * Constructor.
+     */
+    initialize: function(moves, depth) {
+        this.moves = moves;
+        this.depth = depth;
+    }
+    
+    /**
+     * Returns whether this is a winning move.
+     */
+    ,winnability: function() {
+        console.log("Tried calling BestMoveAndResults.winnability!");
+    }
+    
+    /**
+     * Returns the better choice of this and a winning move.
+     */
+    ,addtoWin: function(other) {
+        return other;//we want the other one because it's a win
+    }
+    
+    /**
+     * Returns the better choice of this and a losing move.
+     */
+    ,addToLoss: function(other) {
+        return this; //we want this one, because the other one is a loss.
+    }
+    
+    /**
+     * Returns a move chosen at random.
+     */
+    ,getMove: function() {
+        //using Jacob Relkin's answer here: https://stackoverflow.com/questions/4550505/getting-a-random-value-from-a-javascript-array
+        return this.moves[Math.floor(Math.random() * this.moves.length)];
+    }
+    
+    
+}); //end of BestMoveAndResults
+
+var WinningMoveAndResults = Class.create(BestMoveAndResults, {
+
+    /**
+     * Constructor.
+     */
+    initialize: function($super, moves, depth) {
+        $super(moves, depth);
+    }
+    
+    ,winnability: function() {
+        return RESULT_WIN;
+    }
+    
+    ,addTo: function(other) {
+        return other.addToWin(this);
+    }
+    
+    ,addtoWin: function(other) {
+        if (this.depth > other.depth) {
+            //the other one can lead to a win faster.  Choose that one.
+            return other;
+        } else if (this.depth < other.depth) {
+            //this can lead to a win faster.  Choose this one.
+            return this;
+        } else {
+            //both lead to a win in the same amount of time.  
+            return new WinningMoveAndResults(this.moves.concat(other.moves), this.depth);
+        }
+    }
+    
+    ,addToDunno: function(other) {
+        return this; //this is a win.
+    }
+    
+    ,reverseForParent: function(parent) {
+        return new LosingMoveAndResults([parent], this.depth + 1);
+    }
+    
+});
+
+
+var LosingMoveAndResults = Class.create(BestMoveAndResults, {
+    winnability: function() {
+        return RESULT_LOSS;
+    }
+    
+    ,addTo: function(other) {
+        return other.addToLoss(this);
+    }
+    
+    //addToWin: not needed because it's in the superclass
+    
+    ,addToDunno: function(other) {
+        return other; //other is better
+    }
+    
+    ,addToLoss: function(other) {
+        if (this.depth > other.depth) {
+            //we can drag it on longer with this.  
+            return this;
+        } else if (this.depth < other.depth) {
+            return other;
+        } else {
+            return new LosingMoveAndResults(this.moves.concat(other.moves), this.depth);
+        }
+    }
+    
+    ,reverseForParent: function(parent) {
+        return new WinningMoveAndResults([parent], this.depth + 1);
+    }
+});
+
+var UndecidedMoveAndResults = Class.create(BestMoveAndResults, {
+   winnability: function() {
+       return RESULT_DUNNO;
+   }
+   
+   ,addTo: function(other) {
+       return other.addToDunno(this);
+   }
+   
+   ,addToDunno: function(other) {
+       if (this.depth == other.depth) {
+           return new UndecidedMoveAndResults(this.moves.concat(other.moves), this.depth);
+       } else {
+           if (Math.random() > .5) {
+               return this;
+           } else {
+               return other;
+           }
+       }
+    }
+    
+    ,reverseForParent: function(parent) {
+        return new UndecidedMoveAndResults([parent], this.depth + 1);
+    }
+});
+
+
+var NullBestMoveAndResults = Class.create(LosingMoveAndResults, {
+    
+   /**
+    * Constructor.
+    */
+   initialize: function($super) {
+        $super([], 0);
+   }
+    
+});
+
+
+
+
+
 /**
  *  Updated Brute-Force AI to play games.  This one will look for both wins (to head towards) and losses (to avoid).
  */
@@ -3811,73 +3972,44 @@ var DepthSearchPlayer = Class.create(ComputerPlayer, {
      * Chooses a move.
      */
     ,givePosition: function(playerIndex, position, referee) {
-        var winningMove = this.getWinningMove(playerIndex, position);
-        var option;
-        if (winningMove != null) {
-            option = winningMove;
-            console.log("Found a winning move!");
-        } else {
-            var options = position.getOptionsForPlayer(playerIndex);
-            var randomIndex = Math.floor(Math.random() * options.length);
-            option = options[randomIndex];
-        }
+        var bestMoves = this.getBestMovesFrom(playerIndex, position, this.maxDepth);
+        var option = bestMoves.getMove();
         window.setTimeout(function(){referee.moveTo(option);}, this.delayMilliseconds);
     }
     
     /**
-     * Returns a subset of moves.  If I can find a winning move, I return that one.  Otherweise, if I find moves that don't lead to death, then I return
-    
-    ,/**
-     * Returns a winning move.
+     * Returns a BestMoveAndResults from the options of a position.
+     * @param playerIndex index of current player
+     * @param position    The position to search options from.
+     * @param depth       The maximum depth to search from.
      */
-    getWinningMove: function(playerIndex, position) {
+    ,getBestMovesFrom: function(playerIndex, position, depth) {
         var options = position.getOptionsForPlayer(playerIndex);
-        var opponentHasWinningMove = false;
+        bestOptions = new NullBestMoveAndResults();
         for (var i = 0; i < options.length; i++) {
-            var option = options[i];
-            var otherWins = this.playerCanWin(1 - playerIndex, option, 1);
-            if (otherWins == "maybe") {
-                //do nothing
-            } else if (otherWins == false) {
-                return option;
+            option = options[i];
+            if (depth > 1) {
+                //look down one level
+                nextOptions = this.getBestMovesFrom(1 - playerIndex, option, depth - 1);
+                bestOptions = bestOptions.addTo(nextOptions.reverseForParent(option));
+                if (bestOptions.winnability() == 1) {
+                    //we found a win.  Let's shortcut and return that instead of getting fancy.
+                    return bestOptions;
+                }
+            } else {
+                //we don't go any deeper!
+                bestOptions = bestOptions.addTo(new UndecidedMoveAndResults([option], 0));
             }
         }
-        return null;
-    }
-    
-    ,/**
-     * Returns whether a player can win, given the depth.  Can return a boolean or "maybe".
-     */
-    playerCanWin: function(playerIndex, position, depth) {
-        if (depth > this.maxDepth) {
-            //console.log("Hit max search depth.");
-            return "maybe";
-        }
-        var maybeWins = false;
-        var options = position.getOptionsForPlayer(playerIndex);
-        for (var i = 0; i < options.length; i++) {
-            var option = options[i];
-            var otherWins = this.playerCanWin(1-playerIndex, option, depth + 1);
-            if (otherWins == "maybe") {
-                maybeWins = true;
-            } else if (!otherWins) {
-                return true;
-            }
-        }
-        if (maybeWins) {
-            return "maybe";
-        } else {
-            return false;
-        }
-        
+        return bestOptions;
     }
     
 });
 
 /**
- *  Brute-Force AI to play games.
+ *  Brute-Force AI to play games.  Does not avoid losing moves.
  */
-var DepthSearchPlayer = Class.create(ComputerPlayer, {
+var DepthSearchPlayerOld = Class.create(ComputerPlayer, {
     /**
      * Constructor
      * The delay doesn't work!  There's no way to pause a fruitful function.
