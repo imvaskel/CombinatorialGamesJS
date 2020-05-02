@@ -2044,21 +2044,19 @@ var Manalath = Class.create(CombinatorialGame, {
         this.playerNames = ["Blue", "Red"];
     }
 
-    ,/**
+    /**
      * toString
      */
-     toString: function() {
+    ,toString: function() {
+        string = "Manalath position: \n";
         for (var i = 0; i < this.blockedSpaces.length; i++) {
-            if(i == 0) {
-                string = "Blue player currently has blocks at: ";
-            }
-            else {
-                string = "Red player currently has blocks at: ";
-            }
+            string += "  " + this.playerNames[i] + "-colored: ";
             for (var j = 0; j < this.blockedSpaces[i].length; j++) {
-                string += this.blockedSpaces[i][j] + ",";
+                string += "(" + this.blockedSpaces[i][j] + "), ";
             }
+            string += "\n";
         }
+        return string;
     }
 
     ,/**
@@ -2318,7 +2316,7 @@ var Manalath = Class.create(CombinatorialGame, {
         var option0;
         var option;
         var option1;
-
+        
         var groups = this.allGroupsOfSameColor();
         for(var i = 0; i < groups[playerId].length; i++) {
             if (groups[playerId][i].length == 4){
@@ -3599,6 +3597,7 @@ var Referee = Class.create({
             this.view.draw(this.viewElement);
         }
         console.log("In ref!");
+        console.log("  this.position: " + this.position);
         this.requestNextMove();
     }
 
@@ -3631,6 +3630,9 @@ var Referee = Class.create({
      * Sets fields.
      */
     moveTo: function(option) {
+        if (option == undefined) {
+            console.log("option is undefined in Referee.moveTo.  WTJ?!?!?!?!?");
+        }
         if (this.position.hasOption(this.currentPlayer, option)) {
             this.position = option;
             this.currentPlayer = 1 - this.currentPlayer;
@@ -3655,6 +3657,8 @@ var Referee = Class.create({
         } else {
             if (option != null) {
                 console.log("Tried to move to a non-option, stored in global debugVar");
+                console.log("  From: " + this.position);
+                console.log("  To: " + option);
                 debugVar = option;
             }
         }
@@ -3673,6 +3677,8 @@ var Referee = Class.create({
      * Helper for requestNextMove
      */
     ,requestNextMoveHelper: function() {
+        console.log("this: " + this);
+        console.log("this.position: " + this.position);
         this.players[this.currentPlayer].givePosition(this.currentPlayer, this.position, this);
     }
 }); //end of Referee
@@ -3835,7 +3841,35 @@ var BestMoveAndResults = Class.create( {
      */
     ,getMove: function() {
         //using Jacob Relkin's answer here: https://stackoverflow.com/questions/4550505/getting-a-random-value-from-a-javascript-array
-        return this.moves[Math.floor(Math.random() * this.moves.length)];
+        index = Math.floor(Math.random() * this.moves.length);
+        move =  this.moves[index];
+        if (move == undefined) {
+            console.log("Found a problem in getMove():");
+            console.log("    index: " + index);
+            console.log("    move: " + move.toString());
+        }
+        return move;
+    }
+    
+    /**
+     * Checks for parentage and prints a message.
+     */
+    ,checkLegalOption: function(parent, playerId) {
+        for (var i = 0; i < this.moves.length; i++) {
+            option = this.moves[i];
+            if (! parent.hasOption(playerId, option)) {
+                /*console.log("checkLegalOption found a problem!");
+                console.log("    parent: " + parent.toString());
+                console.log("    option: " + option.toString());
+                console.log("    i: " + i);
+                console.log("    this.moves.length: " + this.moves.length);
+                console.log("    depth: " + this.depth);
+                console.log("    playerId: " + playerId);
+                */
+                return false;
+            }
+        }
+        //console.log("Success in checkLegalOption!");
     }
     
     
@@ -3875,7 +3909,8 @@ var WinningMoveAndResults = Class.create(BestMoveAndResults, {
         return this; //this is a win.
     }
     
-    ,reverseForParent: function(parent) {
+    ,reverseForParent: function(parent, playerId) {
+        this.checkLegalOption(parent, playerId);
         return new LosingMoveAndResults([parent], this.depth + 1);
     }
     
@@ -3908,7 +3943,8 @@ var LosingMoveAndResults = Class.create(BestMoveAndResults, {
         }
     }
     
-    ,reverseForParent: function(parent) {
+    ,reverseForParent: function(parent, playerId) {
+        this.checkLegalOption(parent, playerId);
         return new WinningMoveAndResults([parent], this.depth + 1);
     }
 });
@@ -3934,7 +3970,8 @@ var UndecidedMoveAndResults = Class.create(BestMoveAndResults, {
        }
     }
     
-    ,reverseForParent: function(parent) {
+    ,reverseForParent: function(parent, playerId) {
+        this.checkLegalOption(parent, playerId);
         return new UndecidedMoveAndResults([parent], this.depth + 1);
     }
 });
@@ -3948,6 +3985,14 @@ var NullBestMoveAndResults = Class.create(LosingMoveAndResults, {
    initialize: function($super) {
         $super([], 0);
    }
+   
+   ,checkLegalOption: function(parent, playerId) {
+       //do nothing.  Nothing is a legal option.
+   }
+    
+    ,getMove: function() {
+        console.log("Called getMove() on NullBestMoveAndResults!  Yikes!");
+    }
     
 });
 
@@ -3973,6 +4018,7 @@ var DepthSearchPlayer = Class.create(ComputerPlayer, {
      */
     ,givePosition: function(playerIndex, position, referee) {
         var bestMoves = this.getBestMovesFrom(playerIndex, position, this.maxDepth);
+        //console.log("Looking for a move from: " + position);
         var option = bestMoves.getMove();
         window.setTimeout(function(){referee.moveTo(option);}, this.delayMilliseconds);
     }
@@ -3981,27 +4027,31 @@ var DepthSearchPlayer = Class.create(ComputerPlayer, {
      * Returns a BestMoveAndResults from the options of a position.
      * @param playerIndex index of current player
      * @param position    The position to search options from.
-     * @param depth       The maximum depth to search from.
+     * @param depth       The maximum depth to search to.
      */
     ,getBestMovesFrom: function(playerIndex, position, depth) {
         var options = position.getOptionsForPlayer(playerIndex);
-        bestOptions = new NullBestMoveAndResults();
-        for (var i = 0; i < options.length; i++) {
-            option = options[i];
-            if (depth > 1) {
-                //look down one level
-                nextOptions = this.getBestMovesFrom(1 - playerIndex, option, depth - 1);
-                bestOptions = bestOptions.addTo(nextOptions.reverseForParent(option));
+        var bestOptions = new NullBestMoveAndResults();
+        if (options.length == 0) {
+            return bestOptions;
+        }
+        if (depth <= 1) {
+            return new UndecidedMoveAndResults(options, 0);
+        } else {
+            for (var i = 0; i < options.length; i++) {
+                var option = options[i];
+                var nextOptions = this.getBestMovesFrom(1 - playerIndex, option, depth - 1);
+                var reversed = nextOptions.reverseForParent(option, 1 - playerIndex);
+                bestOptions = bestOptions.addTo(reversed);
+                
                 if (bestOptions.winnability() == 1) {
                     //we found a win.  Let's shortcut and return that instead of getting fancy.
                     return bestOptions;
                 }
-            } else {
-                //we don't go any deeper!
-                bestOptions = bestOptions.addTo(new UndecidedMoveAndResults([option], 0));
             }
+            //console.log("Returning a " + bestOptions.winnability() + " from depth " + depth + "...");
+            return bestOptions;
         }
-        return bestOptions;
     }
     
 });
