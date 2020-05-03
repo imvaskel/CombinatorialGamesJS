@@ -535,6 +535,18 @@ var InteractiveAtroposViewFactory = Class.create({
 
 //end of Distance Games stuff
 
+function getCommonPlayerOptions(viewFactory, delay, lowAIDifficulty, highAIDifficulty) {
+    var highAI = highAIDifficulty || 7;
+    var lowAI = lowAIDifficulty || 1;
+    var playDelay = delay || 1000;
+    var playerOptions = [new HumanPlayer(viewFactory), new RandomPlayer(playDelay)];
+    for (var i = lowAI; i <= highAI; i++) {
+        playerOptions.push(new DepthSearchPlayer(playDelay, i));
+    }
+    return playerOptions;
+    
+}
+
 
 
 /**************************Buttons and Scissors***************************************/
@@ -542,7 +554,8 @@ var InteractiveAtroposViewFactory = Class.create({
 function newButtonsAndScissorsGame() {
     var viewFactory = new InteractiveButtonsAndScissorsViewFactory();
     var playDelay = 1000;
-    var playerOptions = [new HumanPlayer(viewFactory), new RandomPlayer(playDelay), new DepthSearchPlayer(playDelay, 1), new DepthSearchPlayer(playDelay, 3), new DepthSearchPlayer(playDelay, 5), new DepthSearchPlayer(100, 7)];
+    //var playerOptions = [new HumanPlayer(viewFactory), new RandomPlayer(playDelay), new DepthSearchPlayer(playDelay, 1), new DepthSearchPlayer(playDelay, 3), new DepthSearchPlayer(playDelay, 5), new DepthSearchPlayer(100, 7)];
+    var playerOptions = getCommonPlayerOptions(viewFactory, playDelay, 1, 5);
     var width = parseInt($('boardWidth').value);
     var height = parseInt($('boardHeight').value);
     var controlForm = $('gameOptions');
@@ -3221,7 +3234,8 @@ var InteractiveSVGDomineeringViewFactory = Class.create({
 function newClobbineeringGame() {
     var viewFactory = new InteractiveSVGClobbineeringViewFactory();
     var playDelay = 1000;
-    var playerOptions = [new HumanPlayer(viewFactory), new RandomPlayer(playDelay), new DepthSearchPlayer(playDelay, 1), new DepthSearchPlayer(playDelay, 3), new DepthSearchPlayer(playDelay, 5), new DepthSearchPlayer(200, 7)];
+    //var playerOptions = [new HumanPlayer(viewFactory), new RandomPlayer(playDelay), new DepthSearchPlayer(playDelay, 1), new DepthSearchPlayer(playDelay, 3), new DepthSearchPlayer(playDelay, 5), new DepthSearchPlayer(200, 7)];
+    var playerOptions = getCommonPlayerOptions(viewFactory, playDelay, 1, 5);
     var width = parseInt($('boardWidth').value);
     var height = parseInt($('boardHeight').value);
     var controlForm = $('gameOptions');
@@ -3238,7 +3252,8 @@ function newClobbineeringGame() {
 function newDomineeringGame() {
     var viewFactory = new InteractiveSVGDomineeringViewFactory();
     var playDelay = 1000;
-    var playerOptions = [new HumanPlayer(viewFactory), new RandomPlayer(playDelay), new DepthSearchPlayer(playDelay, 1), new DepthSearchPlayer(playDelay, 3), new DepthSearchPlayer(playDelay, 5), new DepthSearchPlayer(200, 7)];
+    //var playerOptions = [new HumanPlayer(viewFactory), new RandomPlayer(playDelay), new DepthSearchPlayer(playDelay, 1), new DepthSearchPlayer(playDelay, 3), new DepthSearchPlayer(playDelay, 5), new DepthSearchPlayer(200, 7)];
+    var playerOptions = getCommonPlayerOptions(viewFactory, playDelay, 1, 5);
     var width = parseInt($('boardWidth').value);
     var height = parseInt($('boardHeight').value);
     var controlForm = $('gameOptions');
@@ -3252,7 +3267,8 @@ function newDomineeringGame() {
 function newConnectFourGame() {
     var viewFactory = new InteractiveSVGConnectFourViewFactory();
     var playDelay = 1000;
-    var playerOptions = [new HumanPlayer(viewFactory), new RandomPlayer(playDelay), new DepthSearchPlayer(playDelay, 1), new DepthSearchPlayer(playDelay, 3), new DepthSearchPlayer(playDelay, 5), new DepthSearchPlayer(200, 7)];
+    //var playerOptions = [new HumanPlayer(viewFactory), new RandomPlayer(playDelay), new DepthSearchPlayer(playDelay, 1), new DepthSearchPlayer(playDelay, 3), new DepthSearchPlayer(playDelay, 5), new DepthSearchPlayer(200, 7)];
+    var playerOptions = getCommonPlayerOptions(viewFactory, playDelay, 1, 5);
     var width = parseInt($('boardWidth').value);
     var height = parseInt($('boardHeight').value);
     var controlForm = $('gameOptions');
@@ -3266,7 +3282,8 @@ function newConnectFourGame() {
 function newManalathGame() {
     var viewFactory = new InteractiveManalathViewFactory();
     var playDelay = 1000;
-    var playerOptions = [new HumanPlayer(viewFactory), new RandomPlayer(playDelay), new DepthSearchPlayer(playDelay, 1), new DepthSearchPlayer(playDelay, 3), new DepthSearchPlayer(playDelay, 5), new DepthSearchPlayer(200, 7)];
+    //var playerOptions = [new HumanPlayer(viewFactory), new RandomPlayer(playDelay), new DepthSearchPlayer(playDelay, 1), new DepthSearchPlayer(playDelay, 3), new DepthSearchPlayer(playDelay, 5), new DepthSearchPlayer(200, 7)];
+    var playerOptions = getCommonPlayerOptions(viewFactory, playDelay, 1, 5);
     var width = parseInt($('boardWidth').value);
     var height = parseInt($('boardHeight').value);
     var controlForm = $('gameOptions');
@@ -3283,7 +3300,8 @@ function newManalathGame() {
 function newNoCanDoGame() {
     var viewFactory = new InteractiveSVGDomineeringViewFactory();
     var playDelay = 1000;
-    var playerOptions = [new HumanPlayer(viewFactory), new RandomPlayer(playDelay), new DepthSearchPlayer(playDelay, 1), new DepthSearchPlayer(playDelay, 3), new DepthSearchPlayer(playDelay, 5), new DepthSearchPlayer(200, 7)];
+    //var playerOptions = [new HumanPlayer(viewFactory), new RandomPlayer(playDelay), new DepthSearchPlayer(playDelay, 1), new DepthSearchPlayer(playDelay, 3), new DepthSearchPlayer(playDelay, 5), new DepthSearchPlayer(200, 7)];
+    var playerOptions = getCommonPlayerOptions(viewFactory, playDelay, 1, 5);
     var width = parseInt($('boardWidth').value);
     var height = parseInt($('boardHeight').value);
     var controlForm = $('gameOptions');
@@ -3300,7 +3318,8 @@ function newNoCanDoGame() {
 function newAtroposGame() {
     var viewFactory = new InteractiveAtroposViewFactory();
     var playDelay = 1000;
-    var playerOptions = [new HumanPlayer(viewFactory), new RandomPlayer(playDelay), new DepthSearchPlayer(playDelay, 1), new DepthSearchPlayer(playDelay, 3), new DepthSearchPlayer(playDelay, 5), new DepthSearchPlayer(100, 7)];
+    //var playerOptions = [new HumanPlayer(viewFactory), new RandomPlayer(playDelay), new DepthSearchPlayer(playDelay, 1), new DepthSearchPlayer(playDelay, 3), new DepthSearchPlayer(playDelay, 5), new DepthSearchPlayer(100, 7)];
+    var playerOptions = getCommonPlayerOptions(viewFactory, playDelay, 1, 5);
     var width = parseInt($('boardSize').value);
     var controlForm = $('gameOptions');
     var leftPlayer = parseInt(getSelectedRadioValue(controlForm.elements['leftPlayer']));
@@ -3316,7 +3335,8 @@ function newAtroposGame() {
 function newClobberGame(isReverse) {
     var viewFactory = new InteractiveClobberViewFactory(isReverse);
     var playDelay = 1000;
-    var playerOptions = [new HumanPlayer(viewFactory), new RandomPlayer(playDelay), new DepthSearchPlayer(playDelay, 1), new DepthSearchPlayer(playDelay, 3), new DepthSearchPlayer(playDelay, 5), new DepthSearchPlayer(200, 7)];
+    //var playerOptions = [new HumanPlayer(viewFactory), new RandomPlayer(playDelay), new DepthSearchPlayer(playDelay, 1), new DepthSearchPlayer(playDelay, 3), new DepthSearchPlayer(playDelay, 5), new DepthSearchPlayer(200, 7)];
+    var playerOptions = getCommonPlayerOptions(viewFactory, playDelay, 1, 5);
     var width = parseInt($('boardWidth').value);
     var height = parseInt($('boardHeight').value);
     var controlForm = $('gameOptions');
@@ -3823,6 +3843,13 @@ var BestMoveAndResults = Class.create( {
     }
     
     /**
+     * Returns the depth of the knowledge.
+     */
+    ,getDepth: function() {
+        return this.depth;
+    }
+    
+    /**
      * Returns the better choice of this and a winning move.
      */
     ,addtoWin: function(other) {
@@ -4019,6 +4046,13 @@ var DepthSearchPlayer = Class.create(ComputerPlayer, {
     ,givePosition: function(playerIndex, position, referee) {
         var bestMoves = this.getBestMovesFrom(playerIndex, position, this.maxDepth);
         //console.log("Looking for a move from: " + position);
+        if (bestMoves.winnability() == RESULT_WIN) {
+            console.log("AI is feeling real good.");
+        } else if (bestMoves.winnability() == RESULT_DUNNO) {
+            console.log("AI doesn't know how to feel.  Depth: " + bestMoves.getDepth());
+        } else {
+            console.log("AI doesn't feel too good about this.  Death likely in " + bestMoves.getDepth() + " moves.");
+        }
         var option = bestMoves.getMove();
         window.setTimeout(function(){referee.moveTo(option);}, this.delayMilliseconds);
     }
@@ -4148,7 +4182,7 @@ function getRadioPlayerOptions(playerId) {
     } else {
         console.log("getRadioPlayerOptions got an incorrect playerId");
     }
-    return createRadioGroup(playerName + "Player",  ["Human", "Random", "Easy AI", "Medium AI", "Hard AI (very slow)"], defaultIndex); // "Professional (hangs your browser)"
+    return createRadioGroup(playerName + "Player",  ["Human", "Random", "Very Easy AI", "Easy AI", "Medium AI", "Tricky AI (slow)", "Hard AI (very slow)"], defaultIndex); // "Professional (hangs your browser)"
 }
 
 /**
