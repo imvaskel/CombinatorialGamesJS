@@ -1,11 +1,11 @@
 /**
  * Contains Classes and functions for use with Combinatorial Games.
  *
- * author: Kyle George Burke
+ * author: Kyle Webster Burke
  * This software is licensed under the MIT License:
 The MIT License (MIT)
 
-Copyright (c) 2014 Kyle G. Burke
+Copyright (c) 2021 Kyle W. Burke
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -51,17 +51,17 @@ var CombinatorialGame = Class.create({
         return false;
     }
 
-    ,/**
-     * Returns the canonical form of this game, which must be equivalent.  This should be implemented in subclasses to improve performance for dynamic-programming AIs I haven't written yet. :-P
+    /**
+     * Returns a simplified form of this game, which must be equivalent.  This should be implemented in subclasses to improve performance for dynamic-programming AIs I haven't written yet. :-P
      */
-    canonize: function() {
+    ,simplify: function() {
         return this.clone();
     }
 
-    ,/**
+    /**
      * Gets the player's identity (Blue/Black/Vertical/etc) as a string.
      */
-    getPlayerName: function(playerIndex) {
+    ,getPlayerName: function(playerIndex) {
         return this.playerNames[playerIndex];
     }
 
@@ -114,6 +114,283 @@ var GridDistanceGame = Class.create(CombinatorialGame, {
     }
 
 }); //end of GridDistanceGame class
+
+
+
+//////////////////////////////////// Transverse Wave ////////////////////////////////////////////////
+
+
+/**
+ * Transverse Wave game
+ * 
+ * Grid is stored as a 2D array of booleans.  (Array of columns of cells.)
+ */
+var TransverseWave = Class.create(CombinatorialGame, {
+    
+    /**
+     * Constructor.
+     * greenProbability is the likelihood that a single cell is green
+     */
+    initialize: function(height, width, greenProbability) {
+        this.playerNames = ["Left", "Right"];
+        this.columns = new Array();
+        //default probability
+        var greenChance = greenProbability || .2;
+        for (var i = 0; i < this.width; i++) {
+            var column = new Array();
+            for (var j = 0; j < this.height; j++) {
+                var isGreen = Math.random() < greenChance;
+                column.push(isGreen);
+            }
+            this.columns.push(column);
+        }
+    }
+    
+    /**
+     * Returns the width of this board.
+     */
+    ,getWidth: function() {
+        return this.columns.length;
+    }
+    
+    /**
+     * Returns the height of this board.
+     */
+    ,getHeight: function() {
+        if (this.getWidth() == 0) {
+            return 0;
+        } else {
+            return this.columns[0].length;
+        }
+    }
+    
+    /**
+     * Equals!
+     */
+    ,equals: function(other) {
+        //check that the dimensions match
+        if (this.getWidth() != other.getWidth() || this.getHeight() != other.getHeight()) {
+            return false;
+        }
+        //now check that all the cells are equal
+        for (var col = 0; col < this.columns.length; col++) {
+            for (var row = 0; row < this.columns[col].length; row++) {
+                if (this.columns[col][row] != other.columns[col][row]) {
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
+    
+    /**
+     * Clone.
+     */
+    ,clone: function() {
+        var width = this.getWidth();
+        var height = this.getHeight();
+        var other = new TransverseWave(height, width);
+        for (var col = 0; col < width; col++) {
+            for (var row = 0; row < height; row++) {
+                other.columns[col][row] = this.columns[col][row];
+            }
+        }
+        return other;
+    }
+    
+    /**
+     * Returns whether a player can play on one of the columns.
+     */
+    ,canPlayColumn: function(columnIndex) {
+        var column = this.columns[columnIndex];
+        for (var rowIndex = 0; rowIndex < column.length; rowIndex++) {
+            if (! column[rowIndex]) {
+                //the cell is not gree, so this column can be played on.
+                return true;
+            }
+        }
+        return false;
+    }
+    
+    /**
+     * Returns the position that results in a player playing in a column.
+     */
+    ,playAtColumn: function(columnIndex) {
+        if (!this.canPlayColumn(columnIndex)) {
+            return null;  //TODO: throw an error?
+        } 
+        var option = this.clone();
+        var column = option.columns[columnIndex];
+        for (var rowIndex = 0; rowIndex < column.length; rowIndex++) {
+            if (column[rowIndex]) {
+                //it's already green in this column; spread the transverse wave; and make all the others green!
+                for (var colIndex = 0; colIndex < option.columns.length; colIndex ++) {
+                    option[colIndex][rowIndex] = true;
+                }
+            } else {
+                //it's red here, so make it green
+                option[columnIndex][rowIndex] = true;
+            }
+        }
+        return option;
+    }
+    
+    /**
+     * Gets the options.
+     */
+    ,getOptionsForPlayer: function(playerId) {
+        var options = new Array();
+        for (var colIndex = 0; colIndex < this.columns.length; colIndex++) {
+            if (this.canPlayColumn(colIndex)) {
+                options.push(this.playAtColumn(colIndex));
+            }
+        }
+        return options;
+    }
+    
+} // end of TransverseWave class
+
+
+
+
+var InteractiveTransverseWaveView = Class.create({
+    
+    /**
+     * Constructor.
+     */
+    initialize: function(position) {
+        this.position = position;
+    }
+    
+    /**
+     * Draws the board.
+     */
+    ,draw: function(containerElement, listener) {
+        //clear out the other children of the container element
+        while (containerElement.hasChildNode()) {
+            containerElement.removeChild(containerElement.firstChild);
+        }
+        var svgNS = "http://www.w3.org/2000/svg";
+        var boardSvg = document.createElementNS(svgNS, "svg");
+        //now add the new board to the container
+        containerElement.appendChild(boardSvg);
+        var boardPixelSize = Math.min(window.innerHeight, window.innerWidth - 200);
+        //var boardPixelSize = 10 + (this.position.sideLength + 4) * 100
+        boardSvg.setAttributeNS(null, "width", boardPixelSize);
+        boardSvg.setAttributeNS(null, "height", boardPixelSize);
+        
+        var width = this.position.getWidth();
+        var height = this.position.getHeight();
+        
+        //get some dimensions based on the canvas size
+        var maxBoxWidth = (boardPixelSize - 10) / width;
+        var maxBoxHeight = (boardPixelSize - 10) / (height + 2);
+        var maxBoxSide = Math.min(maxBoxWidth, maxBoxHeight);
+        
+        //draw the board
+        for (var colIndex = 0; colIndex < width; colIndex++) {
+            //draw the triangle at the top of the column
+            if (position.canPlayColumn(colIndex)) {
+                //draw the triangle above the column.  This is where the player will press to select the column.
+                //from Robert Longson's answer here: https://stackoverflow.com/questions/45773273/draw-svg-polygon-from-array-of-points-in-javascript
+                var triangle = document.createElementNS(svgNS, "polygon");
+                var topLeftPoint = containerElement.createSVGPoint();
+                topLeftPoint.x = colIndex * maxBoxSide + 15;
+                topLeftPoint.y = 10;
+                triangle.points.appendItem(topLeftPoint);
+                var topRightPoint = containerElement.createSVGPoint();
+                topRightPoint.x = ((colIndex+1) * maxBoxSide + 5;
+                topRightPoint.y = 10;
+                triangle.points.appendItem(topRightPoint);
+                var bottomPoint = containerElement.createSVGPoint();
+                bottomPoint.x = (colIndex + .5) * maxBoxSide + 10;
+                bottomPoint.y = 5 + maxBoxSide;
+                triangle.points.appendItem(bottomPoint);
+                containerElement.appendChild(triangle);
+                //set the listener for the triangle
+                if (listener != undefined) {
+                    triangle.column = colIndex;
+                    var player = listener;
+                    triangle.onclick = function(event) {player.handleClick(event);}
+                }
+            }
+            //draw the boxes in this column
+            for (var rowIndex = 0; rowIndex < height; rowIndex ++) {
+                var box = document.createElementNS(svgNS,"rect");
+                box.setAttributeNS(null, "x", (10 + colIndex * maxBoxSide) + "");
+                box.setAttributeNS(null, "y", (10 + (rowIndex + 2) * maxBoxSide) + "");
+                box.setAttributeNS(null, "width", maxBoxSide + "");
+                box.setAttributeNS(null, "height", maxBoxSide + "");
+                //box.setAttributeNS(null, "class", parityString + "Checker");
+                if (this.position.columns[colIndex][rowIndex]) {
+                    box.style.fill = "green";
+                } else {
+                    box.style.fill = "red";
+                }
+                containerElement.appendChild(box);
+            }
+        }
+    }
+
+    /**
+     * Handles the mouse click.
+     */
+    ,getNextPositionFromClick: function(event, currentPlayer, containerElement, player) {
+        var columnIndex = event.target.column;
+        var chosenOption = this.position.playAtColumn(columnIndex);
+        player.sendMoveToRef(chosenOption);
+    }
+    
+}); //end of InteractiveTransverseWaveView class
+
+/**
+ * View Factory for Transverse Wave
+ */
+var InteractiveTransverseWaveViewFactory = Class.create({
+    /**
+     * Constructor
+     */
+    initialize: function() {
+    }
+
+    /**
+     * Returns an interactive view
+     */
+    ,getInteractiveBoard: function(position) {
+        return new InteractiveTransverseWaveView(position);
+    }
+
+    /**
+     * Returns a view.
+     */
+    ,getView: function(position) {
+        return this.getInteractiveBoard(position);
+    }
+
+}); //end of InteractiveTransverseWaveViewFactory
+
+/**
+ * Launches a new TransverseWave game.
+ * TODO: add an option to choose the initial density of green cells
+ */
+function newTransverseWaveGame() {
+    var viewFactory = new InteractiveTransverseWaveViewFactory();
+    var playDelay = 1000;
+    var playerOptions = getCommonPlayerOptions(viewFactory, playDelay, 1, 5);
+    var width = parseInt($('boardWidth').value);
+    var height = parseInt($('boardHeight').value);
+    var controlForm = $('gameOptions');
+    var leftPlayer = parseInt(getSelectedRadioValue(controlForm.elements['leftPlayer']));
+    var rightPlayer =  parseInt(getSelectedRadioValue(controlForm.elements['rightPlayer']));
+    var game = new TransverseWave(height, width);
+    var players = [playerOptions[leftPlayer], playerOptions[rightPlayer]];
+    var ref = new Referee(game, players, viewFactory, "MainGameBoard", $('messageBox'), controlForm);
+}
+
+
+
+/////////////////////////////////////// Atropos //////////////////////////////////////////////////////
+
 
 /**
  * Class for Atropos ruleset.
@@ -373,6 +650,11 @@ Atropos.prototype.BLUE = 1;
 Atropos.prototype.YELLOW = 2;
 Atropos.prototype.UNCOLORED = 3;
 //end of Atropos class
+
+
+
+
+
 
 
 var InteractiveAtroposView = Class.create({
@@ -1843,7 +2125,7 @@ var Domineering = Class.create(CombinatorialGame, {
     ,/**
      * Clones this, but replaces dominoes with blocked spaces
      */
-    canonize: function() {
+    simplify: function() {
         var clone = this.clone();
         for (var playerId = 0; playerId < 2; playerId++) {
             while (clone.dominoes[playerId].length > 0) {
@@ -1885,7 +2167,7 @@ var Domineering = Class.create(CombinatorialGame, {
                 dominoSpaces.push([column + playerId, row + (1-playerId)]);
 
                 //create the version of this with dominoes replaced by blocked spots
-                var allBlocks = this.canonize();
+                var allBlocks = this.simplify();
 
                 var blocked = false;
                 //make sure no blocked spaces are in the way
@@ -1927,7 +2209,7 @@ var Domineering = Class.create(CombinatorialGame, {
                 dominoSpaces.push([column + playerId, row + (1-playerId)]);
 
                 //create the version of this with dominoes replaced by blocked spots
-                var allBlocks = this.canonize();
+                var allBlocks = this.simplify();
 
                 var blocked = false;
                 //make sure no blocked spaces are in the way
@@ -2761,7 +3043,7 @@ var NoCanDo = Class.create(CombinatorialGame, {
     ,/**
      * Clones this, but replaces dominoes with blocked spaces
      */
-    canonize: function() {
+    simplify: function() {
         var clone = this.clone();
         for (var playerId = 0; playerId < 2; playerId++) {
             while (clone.dominoes[playerId].length > 0) {
@@ -2796,7 +3078,7 @@ var NoCanDo = Class.create(CombinatorialGame, {
     isVerticalDominoHappy: function(dominoBlock) {
         var x = dominoBlock[0];
         var y = dominoBlock[1];
-        var canonizedBoard = this.canonize();
+        var simplifiedBoard = this.simplify();
         var topToTheLeft = dominoBlock[0]+1;
         var blockedTop = false;
         var blockedBottom = false;
@@ -2804,8 +3086,8 @@ var NoCanDo = Class.create(CombinatorialGame, {
         var blockedTopLeft = false;
         var blockedBottomLeft = false;
         var blockedBottomRight = false;
-        for (var blockIndex = 0; blockIndex < canonizedBoard.blockedSpaces.length; blockIndex++) {
-            var block = canonizedBoard.blockedSpaces[blockIndex]
+        for (var blockIndex = 0; blockIndex < simplifiedBoard.blockedSpaces.length; blockIndex++) {
+            var block = simplifiedBoard.blockedSpaces[blockIndex]
             var toTheRight = dominoBlock[0]+1;
             var toTheLeft = dominoBlock[0]-1;
             var topAndAbove = dominoBlock[1]-1;
@@ -2841,7 +3123,7 @@ var NoCanDo = Class.create(CombinatorialGame, {
      * Checks that a horizontal domino has at least one liberty
      */
     ishorizontalDominoHappy: function(dominoBlock) {
-        var canonizedBoard = this.canonize();
+        var simplifiedBoard = this.simplify();
         var topToTheLeft = dominoBlock[0]+1;
         var blockedLeft = false;
         var blockedRight = false;
@@ -2849,8 +3131,8 @@ var NoCanDo = Class.create(CombinatorialGame, {
         var blockedTopLeft = false;
         var blockedBottomLeft = false;
         var blockedBottomRight = false;
-        for (var blockIndex = 0; blockIndex < canonizedBoard.blockedSpaces.length; blockIndex++) {
-            var block = canonizedBoard.blockedSpaces[blockIndex]
+        for (var blockIndex = 0; blockIndex < simplifiedBoard.blockedSpaces.length; blockIndex++) {
+            var block = simplifiedBoard.blockedSpaces[blockIndex]
             var top = dominoBlock[1]-1;
             var bottom = dominoBlock[1]+1;
             var right = dominoBlock[0]+1;
@@ -2931,7 +3213,7 @@ var NoCanDo = Class.create(CombinatorialGame, {
                 dominoSpaces.push([column, row]);
                 dominoSpaces.push([column + playerId, row + (1-playerId)]);
                 //create the version of this with dominoes replaced by blocked spots
-                var allBlocks = this.canonize();
+                var allBlocks = this.simplify();
                 allBlocks.dominoes = JSON.parse(JSON.stringify(this.dominoes));
                 var blocked = false;
                 var blocksAroundDomino = 0;
