@@ -129,18 +129,18 @@ var TransverseWave = Class.create(CombinatorialGame, {
     
     /**
      * Constructor.
-     * greenProbability is the likelihood that a single cell is green
+     * purpleProbability is the likelihood that a single cell is purple
      */
-    initialize: function(height, width, greenProbability) {
+    initialize: function(height, width, purpleProbability) {
         this.playerNames = ["Left", "Right"];
         this.columns = new Array();
         //default probability
-        var greenChance = greenProbability || .2;
+        var purpleChance = purpleProbability || .35;
         for (var i = 0; i < width; i++) {
             var column = new Array();
             for (var j = 0; j < height; j++) {
-                var isGreen = Math.random() < greenChance;
-                column.push(isGreen);
+                var isPurple = Math.random() < purpleChance;
+                column.push(isPurple);
             }
             this.columns.push(column);
         }
@@ -205,7 +205,7 @@ var TransverseWave = Class.create(CombinatorialGame, {
         var column = this.columns[columnIndex];
         for (var rowIndex = 0; rowIndex < column.length; rowIndex++) {
             if (! column[rowIndex]) {
-                //the cell is not gree, so this column can be played on.
+                //the cell is not green, so this column can be played on.
                 return true;
             }
         }
@@ -223,12 +223,12 @@ var TransverseWave = Class.create(CombinatorialGame, {
         var column = option.columns[columnIndex];
         for (var rowIndex = 0; rowIndex < column.length; rowIndex++) {
             if (column[rowIndex]) {
-                //it's already green in this column; spread the transverse wave; and make all the others green!
+                //it's already purple in this column; spread the transverse wave; and make all the others purple!
                 for (var colIndex = 0; colIndex < option.columns.length; colIndex ++) {
                     option.columns[colIndex][rowIndex] = true;
                 }
             } else {
-                //it's red here, so make it green
+                //it's green here, so make it purple
                 option.columns[columnIndex][rowIndex] = true;
             }
         }
@@ -308,6 +308,7 @@ var InteractiveTransverseWaveView = Class.create({
                 bottomPoint.x = (colIndex + .5) * maxBoxSide + 10;
                 bottomPoint.y = 5 + maxBoxSide;
                 triangle.points.appendItem(bottomPoint);
+                triangle.style.fill = "black";
                 boardSvg.appendChild(triangle);
                 //set the listener for the triangle
                 if (listener != undefined) {
@@ -327,9 +328,9 @@ var InteractiveTransverseWaveView = Class.create({
                 //box.setAttributeNS(null, "class", parityString + "Checker");
                 box.style.stroke = "black";
                 if (this.position.columns[colIndex][rowIndex]) {
-                    box.style.fill = "green";
+                    box.style.fill = "orchid";
                 } else {
-                    box.style.fill = "red";
+                    box.style.fill = "green";
                 }
                 boardSvg.appendChild(box);
             }
@@ -375,7 +376,7 @@ var InteractiveTransverseWaveViewFactory = Class.create({
 
 /**
  * Launches a new TransverseWave game.
- * TODO: add an option to choose the initial density of green cells
+ * TODO: add an option to choose the initial density of purple cells
  */
 function newTransverseWaveGame() {
     var viewFactory = new InteractiveTransverseWaveViewFactory();

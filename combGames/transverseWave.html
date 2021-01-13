@@ -8,7 +8,7 @@
     <script src = "../paithanLibraries2013.js" type = "text/javascript"></script>
     <script src = "combinatorialGames.js" type = "text/javascript"></script>
     <script>
-      var rulesText = "On your turn, choose the arrow above a column with at least one red box.  For each cell in that column, if it's green, all other cells on that row in other columns become green.  If it's red, then just that single cell becomes green.";
+      var rulesText = "On your turn, choose the arrow above a column with at least one green box.  For each cell in that column, if it's purple, all other cells on that row in other columns become purple.  If it's green, then just that single cell becomes purple.";
       function newGame() {
         newTransverseWaveGame();
       }
@@ -27,11 +27,11 @@
         </form>
         <script>
             var minWidth = 5;
-            var maxWidth = 15;
-            var defaultWidth = 8;
+            var maxWidth = 16;
+            var defaultWidth = 10;
             var minHeight = 5;
-            var maxHeight = 13;
-            var defaultHeight = 7;
+            var maxHeight = 16;
+            var defaultHeight = 8;
             var gameOptionsForm = createBasicGridGameOptions(minWidth, maxWidth, defaultWidth, minHeight, maxHeight, defaultHeight);
             $('gameOptions').appendChild(gameOptionsForm);
             $('rulesButton').onclick = showRules;
