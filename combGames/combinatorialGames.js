@@ -383,7 +383,7 @@ var InteractiveBinaryGeographyView = Class.create({
             whiteButton.appendChild(toNode("White"));
             whiteButton.onclick = function() {
                 self.destroyPopup();
-                var option = self.position.getOption(self.position, column, row);
+                var option = self.position.getOption(self.position.WHITE, column, row);
                 player.sendMoveToRef(option);
             };
             this.popup.appendChild(whiteButton);
