@@ -116,8 +116,357 @@ var GridDistanceGame = Class.create(CombinatorialGame, {
 }); //end of GridDistanceGame class
 
 
+//TODO: make a SquareGridGame class that all these grid games inherit from.
 
-//////////////////////////////////// Transverse Wave ////////////////////////////////////////////////
+
+///////////////////////////// Binary Geography ////////////////////////////////
+
+/**
+ * Binary Geography, the impartial version.
+ * 
+ * Grid is stored as a 2D array of booleans.
+ * @author Kyle Burke
+ */
+var BinaryGeography = Class.create(CombinatorialGame, {
+   
+    /**
+     * Constructor.
+     */
+    initialize: function(height, width, blackStartColumn, blackStartRow, whiteStartColumn, whiteStartRow) {
+    
+        this.EMPTY = 0;
+        this.BLACK = 1;
+        this.WHITE = -1;
+        this.playerNames = ["Left", "Right"];
+        if (blackStartColumn == null) {
+            blackStartColumn = Math.floor(Math.random() * height);
+        }
+        if (blackStartRow == null) {
+            blackStartRow = Math.floor(Math.random() * width);
+        }
+        if (whiteStartColumn == null) {
+            whiteStartColumn = Math.floor(Math.random() * height);
+        }
+        if (whiteStartRow == null) {
+            whiteStartRow = Math.floor(Math.random() * width);
+        } 
+        while (whiteStartColumn == blackStartColumn && whiteStartRow == blackStartRow) {
+            whiteStartColumn = Math.floor(Math.random() * height);
+            whiteStartRow = Math.floor(Math.random() * width);
+        }
+        
+        this.lastBlackColumn = blackStartColumn;
+        this.lastBlackRow = blackStartRow;
+        this.lastWhiteColumn = whiteStartColumn;
+        this.lastWhiteRow = whiteStartRow;
+        
+        this.columns = new Array();
+        for (var colI = 0; colI < width; colI++) {
+            var column = new Array();
+            for (var rowI = 0; rowI < height; rowI++) {
+                column.push(this.EMPTY);
+            }
+            this.columns.push(column);
+        }
+        this.columns[blackStartColumn][blackStartRow] = this.BLACK;
+        this.columns[whiteStartColumn][whiteStartRow] = this.WHITE;
+    }
+    
+    /**
+     * Returns the width of this board.
+     */
+    ,getWidth: function() {
+        return this.columns.length;
+    }
+    
+    /**
+     * Returns the height of this board.
+     */
+    ,getHeight: function() {
+        if (this.getWidth() == 0) {
+            return 0;
+        } else {
+            return this.columns[0].length;
+        }
+    }
+    
+    /**
+     * Equals!
+     */
+    ,equals: function(other) {
+        //check that the dimensions match
+        if (this.getWidth() != other.getWidth() || this.getHeight() != other.getHeight()) {
+            return false;
+        }
+        //now check that all the cells are equal
+        for (var col = 0; col < this.columns.length; col++) {
+            for (var row = 0; row < this.columns[col].length; row++) {
+                if (this.columns[col][row] != other.columns[col][row]) {
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
+    
+    /**
+     * Clone.
+     */
+    ,clone: function() {
+        var width = this.getWidth();
+        var height = this.getHeight();
+        var other = new BinaryGeography(height, width);
+        for (var col = 0; col < width; col++) {
+            for (var row = 0; row < height; row++) {
+                other.columns[col][row] = this.columns[col][row];
+            }
+        }
+        other.lastBlackColumn = this.lastBlackColumn;
+        other.lastBlackRow = this.lastBlackRow;
+        other.lastWhiteColumn = this.lastWhiteColumn;
+        other.lastWhiteRow = this.lastWhiteRow;
+        return other;
+    }
+    
+    /**
+     * Gets the options.
+     */
+    ,getOptionsForPlayer: function(playerId) {
+        var options = new Array();
+        //options for adding to the black path
+        var lastTokens = [[this.lastBlackColumn, this.lastBlackRow], [this.lastWhiteColumn, this.lastWhiteRow]];
+        for (var i = 0; i < lastTokens.length; i++) {
+            var color = (i * -2) + 1; //to get BLACK or WHITE
+            var token = lastTokens[i];
+            var col = token[0];
+            var row = token[1];
+            var nextTokens = [[col - 1, row], [col, row - 1], [col + 1, row], [col, row + 1]];
+            for (var j = 0; j < nextTokens.length; j++) {
+                var nextToken = nextTokens[j];
+                var nextCol = nextToken[0];
+                var nextRow = nextToken[1];
+                //check to see whether we can add this option
+                if (0 <= nextCol && nextCol < this.getWidth() && 0 <= nextRow && nextRow < this.getHeight() && this.columns[nextCol][nextRow] == this.EMPTY) {
+                    //we can add this option!  Do it!
+                    var option = this.getOption(color, nextCol, nextRow);
+                    options.push(option);
+                }
+            }
+        }
+        return options;
+    }
+        
+    /**
+     * Gets the result of a play.  (This is not a required (inheriting) function.)
+     */
+    ,getOption: function(color, column, row) {
+        var option = this.clone();
+        option.columns[column][row] = color;
+        if (color == this.BLACK) {
+            option.lastBlackColumn = column;
+            option.lastBlackRow = row;
+        } else {
+            option.lastWhiteColumn = column;
+            option.lastWhiteRow = row;
+        }
+        return option;
+    }
+    
+}); //end of BinaryGeography class
+
+
+
+
+var InteractiveBinaryGeographyView = Class.create({
+    
+    /**
+     * Constructor.
+     */
+    initialize: function(position) {
+        this.position = position;
+    }
+    
+    /**
+     * Draws the board.
+     */
+    ,draw: function(containerElement, listener) {
+        //clear out the other children of the container element
+        while (containerElement.hasChildNodes()) {
+            containerElement.removeChild(containerElement.firstChild);
+        }
+        var svgNS = "http://www.w3.org/2000/svg";
+        var boardSvg = document.createElementNS(svgNS, "svg");
+        //now add the new board to the container
+        containerElement.appendChild(boardSvg);
+        var boardPixelSize = Math.min(window.innerHeight, window.innerWidth - 200);
+        //var boardPixelSize = 10 + (this.position.sideLength + 4) * 100
+        boardSvg.setAttributeNS(null, "width", boardPixelSize);
+        boardSvg.setAttributeNS(null, "height", boardPixelSize);
+        
+        var width = this.position.getWidth();
+        var height = this.position.getHeight();
+        
+        //get some dimensions based on the canvas size
+        var maxCircleWidth = (boardPixelSize - 10) / width;
+        var maxCircleHeight = (boardPixelSize - 10) / (height + 2);
+        var maxDiameter = Math.min(maxCircleWidth, maxCircleHeight);
+        var padPercentage = .2;
+        var boxSide = maxDiameter;
+        var nodeRadius = Math.floor(.5 * maxDiameter * (1-padPercentage));
+        var nodePadding = Math.floor(maxDiameter * padPercentage);
+        
+        //draw the board
+        for (var colIndex = 0; colIndex < width; colIndex++) {
+            //draw the boxes in this column
+            for (var rowIndex = 0; rowIndex < height; rowIndex ++) {
+                var circle = document.createElementNS(svgNS,"circle");
+                circle.setAttributeNS(null, "cx", 5 + Math.floor((colIndex + .5) * boxSide));
+                circle.setAttributeNS(null, "cy", 5 + Math.floor((rowIndex + .5) * boxSide));
+                circle.setAttributeNS(null, "r", nodeRadius);
+                circle.style.stroke = "black";
+                circle.style.strokeWidth = 5;
+                if ((colIndex == this.position.lastBlackColumn && rowIndex == this.position.lastBlackRow) || (colIndex == this.position.lastWhiteColumn && rowIndex == this.position.lastWhiteRow)) {
+                    circle.style.stroke = "green";
+                }
+                if (this.position.columns[colIndex][rowIndex] == this.position.BLACK) {
+                    circle.style.fill = "black";
+                } else if (this.position.columns[colIndex][rowIndex] == this.position.WHITE) {
+                    circle.style.fill = "white";
+                } else {
+                    circle.style.fill = "gray";
+                    //if this is distance 1 from either of the last plays...
+                    if (Math.abs(colIndex - this.position.lastBlackColumn) + Math.abs(rowIndex - this.position.lastBlackRow) == 1 || Math.abs(colIndex - this.position.lastWhiteColumn) + Math.abs(rowIndex - this.position.lastWhiteRow) == 1) {
+                        if (listener != undefined) {
+                            var player = listener;
+                            circle.column = colIndex;
+                            circle.row = rowIndex;
+                            circle.onclick = function(event) {player.handleClick(event);}
+                        }
+                    }
+                }
+                boardSvg.appendChild(circle);
+            }
+        }
+    }
+
+    /**
+     * Handles the mouse click.
+     */
+    ,getNextPositionFromClick: function(event, currentPlayer, containerElement, player) {
+        var column = event.target.column;
+        var row = event.target.row;
+        var blackDistance = Math.abs(column - this.position.lastBlackColumn) + Math.abs(row - this.position.lastBlackRow);
+        var whiteDistance = Math.abs(column - this.position.lastWhiteColumn) + Math.abs(row - this.position.lastWhiteRow);
+        var nearLastBlack = blackDistance == 1;
+        var nearLastWhite = whiteDistance == 1;
+        if (nearLastBlack && !nearLastWhite) {
+            var chosenOption = this.position.getOption(this.position.BLACK, column, row);
+        } else if (!nearLastBlack && nearLastWhite) {
+            var chosenOption = this.position.getOption(this.position.WHITE, column, row);
+        } else if (nearLastBlack && nearLastWhite) {
+            //I don't know how to handle this case yet!
+            this.destroyPopup();
+            console.log("Clicked!");
+            var self = this;
+            //create the popup
+            this.popup = document.createElement("div");
+            var blackButton = document.createElement("button");
+            blackButton.appendChild(toNode("Black"));
+            blackButton.onclick = function() {
+                self.destroyPopup();
+                var option = self.position.getOption(self.position.BLACK, column, row);
+                player.sendMoveToRef(option);
+            };
+            this.popup.appendChild(blackButton);
+
+            var whiteButton = document.createElement("button");
+            whiteButton.appendChild(toNode("White"));
+            whiteButton.onclick = function() {
+                self.destroyPopup();
+                var option = self.position.getOption(self.position, column, row);
+                player.sendMoveToRef(option);
+            };
+            this.popup.appendChild(whiteButton);
+
+            this.popup.style.position = "fixed";
+            this.popup.style.display = "block";
+            this.popup.style.opacity = 1;
+            this.popup.width = Math.min(window.innerWidth/2, 100);
+            this.popup.height = Math.min(window.innerHeight/2, 50);
+            this.popup.style.left = event.clientX + "px";
+            this.popup.style.top = event.clientY + "px";
+            document.body.appendChild(this.popup);
+            return null;
+        } else {
+            console.log("The click wasn't near either last play!  This shouldn't happen!");
+            console.log("Black Distnace: " + blackDistance);
+            console.log("column: " + column);
+            console.log("lastBlackColumn: " + this.position.lastBlackColumn);
+            console.log("White Distance: " + whiteDistance);
+        }
+        player.sendMoveToRef(chosenOption);
+    }
+
+    /**
+     * Destroys the popup color window.
+     */
+    ,destroyPopup: function() {
+        if (this.popup != null) {
+            this.popup.parentNode.removeChild(this.popup);
+            this.selectedElement = undefined;
+            this.popup = null;
+        }
+    }
+    
+}); //end of InteractiveBinaryGeographyView class
+
+/**
+ * View Factory for BinaryGeography
+ */
+var InteractiveBinaryGeographyViewFactory = Class.create({
+    /**
+     * Constructor
+     */
+    initialize: function() {
+    }
+
+    /**
+     * Returns an interactive view
+     */
+    ,getInteractiveBoard: function(position) {
+        return new InteractiveBinaryGeographyView(position);
+    }
+
+    /**
+     * Returns a view.
+     */
+    ,getView: function(position) {
+        return this.getInteractiveBoard(position);
+    }
+
+}); //end of InteractiveBinaryGeographyViewFactory
+
+/**
+ * Launches a new BinaryGeography game.
+ * TODO: add an option to choose the initial density of purple cells
+ */
+function newBinaryGeographyGame() {
+    var viewFactory = new InteractiveBinaryGeographyViewFactory();
+    var playDelay = 1000;
+    var playerOptions = getCommonPlayerOptions(viewFactory, playDelay, 1, 5);
+    var width = parseInt($('boardWidth').value);
+    var height = parseInt($('boardHeight').value);
+    var controlForm = $('gameOptions');
+    var leftPlayer = parseInt(getSelectedRadioValue(controlForm.elements['leftPlayer']));
+    var rightPlayer =  parseInt(getSelectedRadioValue(controlForm.elements['rightPlayer']));
+    var game = new BinaryGeography(height, width);
+    var players = [playerOptions[leftPlayer], playerOptions[rightPlayer]];
+    var ref = new Referee(game, players, viewFactory, "MainGameBoard", $('messageBox'), controlForm);
+}
+
+
+
+/////////////////////////////// Transverse Wave /////////////////////////////////////
 
 
 /**
@@ -266,7 +615,6 @@ var InteractiveTransverseWaveView = Class.create({
      * Draws the board.
      */
     ,draw: function(containerElement, listener) {
-        console.log("Drawing the T-Wave board...");
         //clear out the other children of the container element
         while (containerElement.hasChildNodes()) {
             containerElement.removeChild(containerElement.firstChild);
@@ -769,7 +1117,6 @@ var InteractiveAtroposView = Class.create({
         this.popup.style.top = event.clientY + "px";
         document.body.appendChild(this.popup);
         return null;
-        //}
     }
 
     /**
