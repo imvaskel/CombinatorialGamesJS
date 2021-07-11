@@ -561,7 +561,7 @@ var QuantumNim = Class.create(CombinatorialGame, {
      * Returns whether a realization is collapsed out.
      */
     ,isRealizationCollapsed: function(realizationIndex) {
-        console.log("realizationIndex: " + realizationIndex);
+        //console.log("realizationIndex: " + realizationIndex);
         for (var pileIndex = 0; pileIndex < this.getNumPiles(); pileIndex++) {
             if (this.realizations[realizationIndex][pileIndex] < 0) {
                 return true;
@@ -599,7 +599,7 @@ var QuantumNim = Class.create(CombinatorialGame, {
     }
     
     /**
-     * Returns the position that results in a player playing in a column.
+     * Returns the position after a player removes numSticks from pile # pileIndex.
      */
     ,playAtPile: function(pileIndex, numSticks) {
         if (this.maxTakeableFromPile(pileIndex) < numSticks) {
@@ -607,16 +607,69 @@ var QuantumNim = Class.create(CombinatorialGame, {
         } 
         var option = this.clone();
         for (var rIndex = 0; rIndex < this.getNumRealizations(); rIndex++) {
-            var realization = option.realizations[rIndex];
-            realization[pileIndex] -= numSticks;
+            if (!this.isRealizationCollapsed(rIndex)) {
+                var realization = option.realizations[rIndex];
+                realization[pileIndex] -= numSticks;
+            }
         }
         return option;
+    }
+    
+    /**
+     * Returns the position resulting from a player making a quantum move: numSticksA from pileIndexA and numSticksB from pileIndexB.
+     */
+    ,playAtTwoPiles: function(pileIndexA, numSticksA, pileIndexB, numSticksB) {
+        if (pileIndexA == pileIndexB && numSticksA == numSticksB) {
+            return this.playAtPile(pileIndexA, numSticksA);
+        } else if (pileIndexA > pileIndexB || (pileIndexA == pileIndexB && numSticksA > numSticksB)) {
+            //reordering the moves for consistency
+            return this.playAtTwoPiles(pileIndexB, numSticksB, pileIndexA, numSticksA);
+        } else {
+            var option = this.clone();
+            var oldRealizations = option.realizations;
+            var newRealizations = new Array();
+            for (var rIndex = 0; rIndex < this.getNumRealizations(); rIndex++) {
+                var realization = oldRealizations[rIndex];
+                if (!this.isRealizationCollapsed(rIndex)) {
+                    var newRealizationA = new Array();
+                    var newRealizationB = new Array();
+                    for (var pileIndex = 0; pileIndex < this.getWidth(); pileIndex++) {
+                        newRealizationA.push(realization[pileIndex]);
+                        newRealizationB.push(realization[pileIndex]);
+                        if (pileIndex == pileIndexA) {
+                            newRealizationA[pileIndex] -= numSticksA;
+                        } 
+                        if (pileIndex == pileIndexB) {
+                            newRealizationB[pileIndex] -= numSticksB;
+                        }
+                    }
+                    newRealizations.push(newRealizationA);
+                    newRealizations.push(newRealizationB);
+                } else {
+                    newRealizations.push(realization);
+                }
+            }
+            option.realizations = newRealizations;
+            return option;
+            
+            /*
+            //get the two individual options
+            var optionA = this.playAtPile(pileIndexA, numSticksA);
+            var optionB = this.playAtPile(pileIndexB, numSticksB);
+            //combine the realizations, by adding optionB's realizations to optionA
+            for (var rIndex = 0; rIndex < optionB.getNumRealizations(); rIndex++) {
+                var realization = optionB.realizations[rIndex];
+                optionA.realizations.push(realization);
+            }
+            return optionA;*/
+        }
     }
     
     /**
      * Gets the options.
      */
     ,getOptionsForPlayer: function(playerId) {
+        //first get the options from classical moves
         var options = new Array();
         for (var pileIndex = 0; pileIndex < this.getNumPiles(); pileIndex++) {
             var maxSticks = this.maxTakeableFromPile(pileIndex);
@@ -624,6 +677,24 @@ var QuantumNim = Class.create(CombinatorialGame, {
                 options.push(this.playAtPile(pileIndex, numSticks));
             }
         }
+        
+        //next get the options from quantum moves
+        for (var pileIndexA = 0; pileIndexA < this.getNumPiles(); pileIndexA++) {
+            for (var pileIndexB = pileIndexA; pileIndexB < this.getNumPiles(); pileIndexB++) {
+                var maxSticksA = this.maxTakeableFromPile(pileIndexA);
+                var maxSticksB = this.maxTakeableFromPile(pileIndexB);
+                for (var numSticksA = 1; numSticksA <= maxSticksA; numSticksA++) {
+                    var numSticksB = 1;
+                    if (pileIndexA == pileIndexB) {
+                        numSticksB = numSticksA + 1;
+                    }
+                    for ( ; numSticksB <= maxSticksB; numSticksB++) {
+                        options.push(this.playAtTwoPiles(pileIndexA, numSticksA, pileIndexB, numSticksB));
+                    }
+                }
+            }
+        }
+        
         return options;
     }
     
@@ -639,6 +710,9 @@ var InteractiveQuantumNimView = Class.create({
      */
     initialize: function(position) {
         this.position = position;
+        this.movesChosen = 0;
+        this.firstPileIndex = -1;
+        this.firstNumSticks = -1;
     }
     
     /**
@@ -656,15 +730,19 @@ var InteractiveQuantumNimView = Class.create({
         var boardPixelSize = Math.min(window.innerHeight, window.innerWidth - 200);
         //var boardPixelSize = 10 + (this.position.sideLength + 4) * 100
         boardSvg.setAttributeNS(null, "width", boardPixelSize);
-        boardSvg.setAttributeNS(null, "height", boardPixelSize);
+        //boardSvg.setAttributeNS(null, "height", boardPixelSize);
         
         var width = this.position.getWidth();
         var height = this.position.getHeight();
         
         //get some dimensions based on the canvas size
         var maxBoxWidth = (boardPixelSize - 10) / width;
-        var maxBoxHeight = (boardPixelSize - 10) / (height + 2);
-        var maxBoxSide = Math.min(maxBoxWidth, maxBoxHeight);
+        //the boxes get too small as the board increases in height, so we're not doing this here.
+        //var maxBoxHeight = (boardPixelSize - 10) / (height + 2);
+        //var maxBoxSide = Math.min(maxBoxWidth, maxBoxHeight);
+        var maxBoxSide = Math.min(maxBoxWidth, 200);
+        var boardHeight = maxBoxSide * (height + 2) + 10;
+        boardSvg.setAttributeNS(null, "height", boardHeight);
         
         //draw the board
         for (var colIndex = 0; colIndex < width; colIndex++) {
@@ -694,13 +772,13 @@ var InteractiveQuantumNimView = Class.create({
                     var player = listener;
                     triangle.onclick = function(event) {player.handleClick(event);}
                 }
-                console.log("drawing triangle: " + triangle);
+                //console.log("drawing triangle: " + triangle);
             }
             //draw the boxes in this column
             for (var rowIndex = 0; rowIndex < height; rowIndex ++) {
                 var box = document.createElementNS(svgNS,"rect");
                 var boxX = (10 + colIndex * maxBoxSide);
-                var boxY = (10 + (rowIndex + 2) * maxBoxSide);
+                var boxY = (10 + (rowIndex + 1) * maxBoxSide);
                 box.setAttributeNS(null, "x", boxX + "");
                 box.setAttributeNS(null, "y", boxY + "");
                 box.setAttributeNS(null, "width", maxBoxSide + "");
@@ -711,9 +789,9 @@ var InteractiveQuantumNimView = Class.create({
                 boardSvg.appendChild(box);
                 
                 var text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-                var textX = boxX + maxBoxSide / 2;
-                var textY = boxY + maxBoxSide / 2;
-                text.style.fontSize = "10";
+                var textX = boxX + 2 * maxBoxSide / 6;
+                var textY = boxY + 2 * maxBoxSide / 3;
+                text.style.fontSize = maxBoxSide / 2 + "px";
                 text.setAttributeNS(null, "x", textX + "");
                 text.setAttributeNS(null, "y", textY + "");
                 text.innerHTML = "" + this.position.realizations[rowIndex][colIndex];
@@ -734,7 +812,7 @@ var InteractiveQuantumNimView = Class.create({
         var pileIndex = event.target.column;
         var maxSticks = this.position.maxTakeableFromPile(pileIndex);
         this.destroyPopup();
-        console.log("Clicked triangle!");
+        //console.log("Clicked triangle!");
         var self = this;
         //create the popup
         this.popup = document.createElement("div");
@@ -742,10 +820,48 @@ var InteractiveQuantumNimView = Class.create({
             var button = document.createElement("button");
             button.appendChild(toNode("" + i));
             button.number = i;
-            button.onclick = function() {
+            var extraNum = i;
+            button.onclick = function(event) {
+                var source = event.currentTarget; //event.target doesn't work!
                 self.destroyPopup();
-                var option = self.position.playAtPile(pileIndex, button.number);
-                player.sendMoveToRef(option);
+                if (self.movesChosen == 1) {
+                    //we've already chosen one move; this is the second part
+                    var option = self.position.playAtTwoPiles(self.firstPileIndex, self.firstNumSticks, pileIndex, source.number);
+                    self.movesChosen = 0;
+                    player.sendMoveToRef(option);
+                } else {
+                    //prompt to ask whether we're making a second move
+                    self.popup = document.createElement("div");
+                    var doneButton = document.createElement("button");
+                    doneButton.appendChild(toNode("Just that move."));
+                    doneButton.onclick = function() {
+                        var option = self.position.playAtPile(pileIndex, source.number);
+                        self.destroyPopup();
+                        player.sendMoveToRef(option);
+                    };
+                    self.popup.appendChild(doneButton);
+                    var quantumButton = document.createElement("button");
+                    quantumButton.appendChild(toNode("Add a second move."));
+                    quantumButton.onclick = function() {
+                        console.log("Choose another pile!");
+                        self.movesChosen = 1;
+                        self.firstPileIndex = pileIndex;
+                        self.firstNumSticks = source.number;
+                        self.destroyPopup();
+                    };
+                    self.popup.appendChild(quantumButton);
+        
+                    self.popup.style.position = "fixed";
+                    self.popup.style.display = "block";
+                    self.popup.style.opacity = 1;
+                    self.popup.width = Math.min(window.innerWidth/2, 100);
+                    self.popup.height = Math.min(window.innerHeight/2, 50);
+                    self.popup.style.left = event.clientX + "px";
+                    self.popup.style.top = event.clientY + "px";
+                    document.body.appendChild(self.popup);
+                }
+                    
+                
             };
             this.popup.appendChild(button);
         }
@@ -817,6 +933,372 @@ function newQuantumNimGame() {
     var leftPlayer = parseInt(getSelectedRadioValue(controlForm.elements['leftPlayer']));
     var rightPlayer =  parseInt(getSelectedRadioValue(controlForm.elements['rightPlayer']));
     var game = new QuantumNim(height, width, 4);
+    var players = [playerOptions[leftPlayer], playerOptions[rightPlayer]];
+    var ref = new Referee(game, players, viewFactory, "MainGameBoard", $('messageBox'), controlForm);
+}
+
+
+
+/////////////////////////////// Demi-Quantum Nim /////////////////////////////////////////
+
+/**
+ * Demi-Quantum Nim position.
+ * 
+ * Piles are stored in a 2D array of ints.  Each element is a realization.
+ */
+var DemiQuantumNim = Class.create(CombinatorialGame, {
+   
+    /**
+     * Constructor.
+     */
+    initialize: function(numRealizations, numPiles, maxPileSize) {
+        this.playerNames = ["Left", "Right"];
+        this.realizations = new Array();
+        for (var i = 0; i < numRealizations; i++) {
+            var realization = new Array();
+            for (var j = 0; j < numPiles; j++) {
+                var pile = Math.floor(Math.random() * (maxPileSize + 1));
+                realization.push(pile);
+            }
+            this.realizations.push(realization);
+        }
+    }
+    
+    /**
+     * Returns the width of this board.
+     */
+    ,getWidth: function() {
+        if (this.getHeight() == 0) {
+            return 0;
+        } else {
+            return this.realizations[0].length;
+        }
+    }
+    
+    /**
+     * Returns the number of realizations.
+     */
+    ,getNumRealizations: function() {
+        return this.getHeight();
+    }
+    
+    /**
+     * Returns the height of this board.
+     */
+    ,getHeight: function() {
+        return this.realizations.length;
+    }
+    
+    /**
+     * Returns the number of piles.
+     */
+    ,getNumPiles: function() {
+        return this.getWidth();
+    }
+    
+    /**
+     * Equals!
+     */
+    ,equals: function(other) {
+        //check that the dimensions match
+        if (this.getWidth() != other.getWidth() || this.getHeight() != other.getHeight()) {
+            return false;
+        }
+        //now check that all the cells are equal
+        for (var realization = 0; realization < this.realizations.length; realization++) {
+            for (var pile = 0; pile < this.realizations[realization].length; pile++) {
+                if (this.realizations[realization][pile] != other.realizations[realization][pile]) {
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
+    
+    /**
+     * Clone.
+     */
+    ,clone: function() {
+        var width = this.getWidth();
+        var height = this.getHeight();
+        var other = new DemiQuantumNim(height, width, 5);
+        for (var realization = 0; realization < height; realization++) {
+            for (var pile = 0; pile < width; pile++) {
+                other.realizations[realization][pile] = this.realizations[realization][pile];
+            }
+        }
+        return other;
+    }
+    
+    /**
+     * Returns whether a realization is collapsed out.
+     */
+    ,isRealizationCollapsed: function(realizationIndex) {
+        //console.log("realizationIndex: " + realizationIndex);
+        for (var pileIndex = 0; pileIndex < this.getNumPiles(); pileIndex++) {
+            if (this.realizations[realizationIndex][pileIndex] < 0) {
+                return true;
+            }
+        }
+        return false;
+    }
+    
+    /**
+     * Returns whether a player can play on one of the columns.
+     */
+    ,canPlayPile: function(pileIndex) {
+        //var column = this.columns[columnIndex];
+        for (var rIndex = 0; rIndex < this.getNumRealizations(); rIndex++) {
+            if (this.realizations[rIndex][pileIndex] > 0 && ! this.isRealizationCollapsed(rIndex)) {
+                //there are positive sticks in this pile in a non-collapsed realization
+                return true;
+            }
+        }
+        return false;
+    }
+    
+    /**
+     * Returns whether a player can play on one of the columns.
+     */
+    ,maxTakeableFromPile: function(pileIndex) {
+        //var column = this.columns[columnIndex];
+        var maxPileSize = 0;
+        for (var rIndex = 0; rIndex < this.getNumRealizations(); rIndex++) {
+            if (!this.isRealizationCollapsed(rIndex)) {
+                maxPileSize = Math.max(maxPileSize, this.realizations[rIndex][pileIndex]);
+            }
+        }
+        return maxPileSize;
+    }
+    
+    /**
+     * Returns the position that results in a player playing in a column.
+     */
+    ,playAtPile: function(pileIndex, numSticks) {
+        if (this.maxTakeableFromPile(pileIndex) < numSticks) {
+            return null;  //TODO: throw an error?
+        } 
+        var option = this.clone();
+        for (var rIndex = 0; rIndex < this.getNumRealizations(); rIndex++) {
+            if (!this.isRealizationCollapsed(rIndex)) {
+                var realization = option.realizations[rIndex];
+                realization[pileIndex] -= numSticks;
+            }
+        }
+        return option;
+    }
+    
+    /**
+     * Gets the options.
+     */
+    ,getOptionsForPlayer: function(playerId) {
+        var options = new Array();
+        for (var pileIndex = 0; pileIndex < this.getNumPiles(); pileIndex++) {
+            var maxSticks = this.maxTakeableFromPile(pileIndex);
+            for (var numSticks = 1; numSticks <= maxSticks; numSticks++) {
+                options.push(this.playAtPile(pileIndex, numSticks));
+            }
+        }
+        return options;
+    }
+    
+}); //end of DemiQuantumNim class
+
+
+
+
+var InteractiveDemiQuantumNimView = Class.create({
+    
+    /**
+     * Constructor.
+     */
+    initialize: function(position) {
+        this.position = position;
+    }
+    
+    /**
+     * Draws the board.
+     */
+    ,draw: function(containerElement, listener) {
+        //clear out the other children of the container element
+        while (containerElement.hasChildNodes()) {
+            containerElement.removeChild(containerElement.firstChild);
+        }
+        var svgNS = "http://www.w3.org/2000/svg";
+        var boardSvg = document.createElementNS(svgNS, "svg");
+        //now add the new board to the container
+        containerElement.appendChild(boardSvg);
+        var boardPixelSize = Math.min(window.innerHeight, window.innerWidth - 200);
+        //var boardPixelSize = 10 + (this.position.sideLength + 4) * 100
+        boardSvg.setAttributeNS(null, "width", boardPixelSize);
+        boardSvg.setAttributeNS(null, "height", boardPixelSize);
+        
+        var width = this.position.getWidth();
+        var height = this.position.getHeight();
+        
+        //get some dimensions based on the canvas size
+        var maxBoxWidth = (boardPixelSize - 10) / width;
+        var maxBoxHeight = (boardPixelSize - 10) / (height + 1);
+        var maxBoxSide = Math.min(maxBoxWidth, maxBoxHeight);
+        
+        //draw the board
+        for (var colIndex = 0; colIndex < width; colIndex++) {
+            //draw the triangle at the top of the column
+            if (this.position.canPlayPile(colIndex)) {
+                //draw the triangle above the column.  This is where the player will press to select the column.
+                //from Robert Longson's answer here: https://stackoverflow.com/questions/45773273/draw-svg-polygon-from-array-of-points-in-javascript
+                var triangle = document.createElementNS(svgNS, "polygon");
+                triangle.style.stroke = "black";
+                var topLeftPoint = boardSvg.createSVGPoint();
+                topLeftPoint.x = colIndex * maxBoxSide + 15;
+                topLeftPoint.y = 10;
+                triangle.points.appendItem(topLeftPoint);
+                var topRightPoint = boardSvg.createSVGPoint();
+                topRightPoint.x = (colIndex+1) * maxBoxSide + 5;
+                topRightPoint.y = 10;
+                triangle.points.appendItem(topRightPoint);
+                var bottomPoint = boardSvg.createSVGPoint();
+                bottomPoint.x = (colIndex + .5) * maxBoxSide + 10;
+                bottomPoint.y = 5 + maxBoxSide;
+                triangle.points.appendItem(bottomPoint);
+                triangle.style.fill = "black";
+                boardSvg.appendChild(triangle);
+                //set the listener for the triangle
+                if (listener != undefined) {
+                    triangle.column = colIndex;
+                    var player = listener;
+                    triangle.onclick = function(event) {player.handleClick(event);}
+                }
+                console.log("drawing triangle: " + triangle);
+            }
+            //draw the boxes in this column
+            for (var rowIndex = 0; rowIndex < height; rowIndex ++) {
+                var box = document.createElementNS(svgNS,"rect");
+                var boxX = (10 + colIndex * maxBoxSide);
+                var boxY = (10 + (rowIndex + 1) * maxBoxSide);
+                box.setAttributeNS(null, "x", boxX + "");
+                box.setAttributeNS(null, "y", boxY + "");
+                box.setAttributeNS(null, "width", maxBoxSide + "");
+                box.setAttributeNS(null, "height", maxBoxSide + "");
+                //box.setAttributeNS(null, "class", parityString + "Checker");
+                box.style.stroke = "black";
+                box.style.fill = "white";
+                boardSvg.appendChild(box);
+                
+                var text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                var textX = boxX + maxBoxSide / 3;
+                var textY = boxY + 2* maxBoxSide / 3;
+                text.style.fontSize = maxBoxSide / 2 + "px";
+                text.setAttributeNS(null, "x", textX + "");
+                text.setAttributeNS(null, "y", textY + "");
+                text.innerHTML = "" + this.position.realizations[rowIndex][colIndex];
+                if (this.position.isRealizationCollapsed(rowIndex)) {
+                    text.style.fill = "red";
+                } else {
+                    text.style.fill = "black";
+                }
+                boardSvg.appendChild(text);
+            }
+        }
+    }
+
+    /**
+     * Handles the mouse click.
+     */
+    ,getNextPositionFromClick: function(event, currentPlayer, containerElement, player) {
+        var pileIndex = event.target.column;
+        var maxSticks = this.position.maxTakeableFromPile(pileIndex);
+        this.destroyPopup();
+        //console.log("Clicked triangle!");
+        var self = this;
+        //create the popup
+        this.popup = document.createElement("div");
+        for (var i = 1; i <= maxSticks; i++) {
+            var button = document.createElement("button");
+            button.appendChild(toNode("" + i));
+            button.number = i;
+            var extraNum = i;
+            button.onclick = function(event) {
+                //console.log("event: " + event);
+                var source = event.currentTarget;
+                //console.log("source: " + source);
+                //console.log("I think my number is: " + source.number);
+                //console.log("Other possible number: " + i);
+                //console.log("Other possible number: " + extraNum);
+                self.destroyPopup();
+                var option = self.position.playAtPile(pileIndex, source.number);
+                player.sendMoveToRef(option);
+            };
+            this.popup.appendChild(button);
+        }
+        
+        this.popup.style.position = "fixed";
+        this.popup.style.display = "block";
+        this.popup.style.opacity = 1;
+        this.popup.width = Math.min(window.innerWidth/2, 100);
+        this.popup.height = Math.min(window.innerHeight/2, 50);
+        this.popup.style.left = event.clientX + "px";
+        this.popup.style.top = event.clientY + "px";
+        document.body.appendChild(this.popup);
+        return null;
+        
+        
+    }
+
+    /**
+     * Destroys the popup color window.
+     */
+    ,destroyPopup: function() {
+        if (this.popup != null) {
+            this.popup.parentNode.removeChild(this.popup);
+            this.selectedElement = undefined;
+            this.popup = null;
+        }
+    }
+    
+    
+});  //end of InteractiveDemiQuantumNimView
+
+/**
+ * View Factory for Demi-Quantum Nim
+ */
+var InteractiveDemiQuantumNimViewFactory = Class.create({
+    /**
+     * Constructor
+     */
+    initialize: function() {
+    }
+
+    /**
+     * Returns an interactive view
+     */
+    ,getInteractiveBoard: function(position) {
+        return new InteractiveDemiQuantumNimView(position);
+    }
+
+    /**
+     * Returns a view.
+     */
+    ,getView: function(position) {
+        return this.getInteractiveBoard(position);
+    }
+
+}); //end of InteractiveDemiQuantumNimViewFactory
+
+/**
+ * Launches a new Demi-Quantum Nim game.
+ * TODO: add an option to choose the initial density of purple cells
+ */
+function newDemiQuantumNimGame() {
+    var viewFactory = new InteractiveDemiQuantumNimViewFactory();
+    var playDelay = 1000;
+    var playerOptions = getCommonPlayerOptions(viewFactory, playDelay, 1, 5);
+    var width = parseInt($('boardWidth').value);
+    var height = parseInt($('boardHeight').value);
+    var controlForm = $('gameOptions');
+    var leftPlayer = parseInt(getSelectedRadioValue(controlForm.elements['leftPlayer']));
+    var rightPlayer =  parseInt(getSelectedRadioValue(controlForm.elements['rightPlayer']));
+    var game = new DemiQuantumNim(height, width, 4);
     var players = [playerOptions[leftPlayer], playerOptions[rightPlayer]];
     var ref = new Referee(game, players, viewFactory, "MainGameBoard", $('messageBox'), controlForm);
 }

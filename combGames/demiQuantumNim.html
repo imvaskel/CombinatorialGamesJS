@@ -2,20 +2,20 @@
 <html>
   <head>
     <meta charset = "utf-8">
-    <title>Quantum Nim</title>
+    <title>Demi-Quantum Nim</title>
     <link rel = "stylesheet" type = "text/css" href = "cgtStyle.css" />
     <script src = "../prototype.js" type = "text/javascript"></script>
     <script src = "../paithanLibraries2013.js" type = "text/javascript"></script>
     <script src = "combinatorialGames.js" type = "text/javascript"></script>
     <script>
-      var rulesText = "The board state consists of the superposition of multiple nim positions, each in its own row (a realization).  To make a move, select a pile by clicking one of the triangles above that column, then select the number of tokens you want to remove.  (If that was your first move, you will be prompted to include a second move so you are making two moves \"in-quantum\", if you like.)  That many tokens will then be removed from that pile in all realizations.  If one of the realizations has a pile that goes negative, it means that was not a legal move for that realization because there weren't enough tokens in that pile.  These rows become red to indicate that they've \"collapsed out\" and won't affect the game or change going forward.  If you make two moves in-quantum, then both will be individually applied to all realizations so the number of rows will double.";
+      var rulesText = "The board state consists of the superposition of multiple nim positions, each in its own row (a realization).  To make a move, select a pile by clicking one of the triangles above that column, then select the number of tokens you want to remove.  That many tokens will then be removed from that pile in all realizations.  If one of the realizations has a pile that goes negative, it means that was not a legal move for that realization because there weren't enough tokens in that pile.  These rows become red to indicate that they've \"collapsed out\" and won't affect the game or change going forward.";
       function newGame() {
-        newQuantumNimGame();
+        newDemiQuantumNimGame();
       }
     </script>
   </head>
   <body>
-    <h1>Quantum Nim!</h1>
+    <h1>Demi-Quantum Nim!</h1>
     <h2 id = "messageBox">Choose your Game</h2>
     <div id = "gameControls">
         <div class = "gameOption centered">
@@ -29,9 +29,9 @@
             var minWidth = 3;
             var maxWidth = 9;
             var defaultWidth = 5;
-            var minHeight = 1;
-            var maxHeight = 6;
-            var defaultHeight = 2;
+            var minHeight = 5;
+            var maxHeight = 10;
+            var defaultHeight = 6;
             var gameOptionsForm = createBasicGridGameOptions(minWidth, maxWidth, defaultWidth, minHeight, maxHeight, defaultHeight);
             $('gameOptions').appendChild(gameOptionsForm);
             $('rulesButton').onclick = showRules;
