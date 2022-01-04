@@ -448,7 +448,6 @@ var InteractiveBinaryGeographyViewFactory = Class.create({
 
 /**
  * Launches a new BinaryGeography game.
- * TODO: add an option to choose the initial density of purple cells
  */
 function newBinaryGeographyGame() {
     var viewFactory = new InteractiveBinaryGeographyViewFactory();
@@ -460,6 +459,396 @@ function newBinaryGeographyGame() {
     var leftPlayer = parseInt(getSelectedRadioValue(controlForm.elements['leftPlayer']));
     var rightPlayer =  parseInt(getSelectedRadioValue(controlForm.elements['rightPlayer']));
     var game = new BinaryGeography(height, width);
+    var players = [playerOptions[leftPlayer], playerOptions[rightPlayer]];
+    var ref = new Referee(game, players, viewFactory, "MainGameBoard", $('messageBox'), controlForm);
+    
+}
+
+
+///////////////////////////// Popping Balloons ////////////////////////////////
+
+/**
+ * Popping Balloons.
+ * 
+ * Grid is stored as a 2D array of booleans.
+ * @author Kyle Burke
+ */
+var PoppingBalloons = Class.create(CombinatorialGame, {
+   
+    /**
+     * Constructor.
+     */
+    initialize: function(height, width) {
+        var balloonLikelihood = .85;
+        
+        this.playerNames = ["Left", "Right"];
+        
+        this.columns = new Array();
+        for (var colI = 0; colI < width; colI++) {
+            var column = new Array();
+            for (var rowI = 0; rowI < height; rowI++) {
+                column.push(Math.random() <= balloonLikelihood);
+            }
+            this.columns.push(column);
+        }
+    }
+    
+    /**
+     * Returns the width of this board.
+     */
+    ,getWidth: function() {
+        return this.columns.length;
+    }
+    
+    /**
+     * Returns the height of this board.
+     */
+    ,getHeight: function() {
+        if (this.getWidth() == 0) {
+            return 0;
+        } else {
+            return this.columns[0].length;
+        }
+    }
+    
+    /**
+     * Equals!
+     */
+    ,equals: function(other) {
+        //check that the dimensions match
+        if (this.getWidth() != other.getWidth() || this.getHeight() != other.getHeight()) {
+            return false;
+        }
+        //now check that all the cells are equal
+        for (var col = 0; col < this.columns.length; col++) {
+            for (var row = 0; row < this.columns[col].length; row++) {
+                if (this.columns[col][row] != other.columns[col][row]) {
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
+    
+    /**
+     * Clone.
+     */
+    ,clone: function() {
+        var width = this.getWidth();
+        var height = this.getHeight();
+        var other = new PoppingBalloons(height, width);
+        for (var col = 0; col < width; col++) {
+            for (var row = 0; row < height; row++) {
+                other.columns[col][row] = this.columns[col][row];
+            }
+        }
+        return other;
+    }
+    
+    /**
+     * Gets the options.
+     */
+    ,getOptionsForPlayer: function(playerId) {
+        var options = new Array();
+        var width = this.getWidth();
+        var height = this.getHeight();
+        //single balloon options
+        for (var col = 0; col < width; col++) {
+            for (var row = 0; row < height; row++) {
+                if (this.columns[col][row]) {
+                    //create the option for popping that one balloon
+                    options.push(this.getSingleBalloonOption(col, row));
+                }
+            }
+        }
+        
+        //horizontal balloon pair options
+        for (var col = 0; col < width-1; col++) {
+            for (var row = 0; row < height; row++) {
+                if (this.columns[col][row] && this.columns[col+1][row]) {
+                    //create the option for popping the two balloons
+                    options.push(this.getHorizontalBalloonOption(col, row));
+                }
+            }
+        }
+        
+        //vertical balloon pair options
+        for (var col = 0; col < width; col++) {
+            for (var row = 0; row < height-1; row++) {
+                if (this.columns[col][row] && this.columns[col][row+1]) {
+                    //create the option for popping the two balloons
+                    options.push(this.getVerticalBalloonOption(col, row));
+                }
+            }
+        }
+        
+        //all balloons in a 2x2 square options
+        for (var col = 0; col < width-1; col++) {
+            for (var row = 0; row < height-1; row++) {
+                //we just have to check that two diagonal balloons are there, otherwise we will be covered by any of the prior cases
+                if ((this.columns[col][row] && this.columns[col+1][row+1]) || (this.columns[col+1][row] && this.columns[col][row+1])) {
+                    //create the option for popping the two balloons
+                    options.push(this.getSquareBalloonOption(col, row));
+                }
+            }
+        }
+        return options;
+    }
+        
+    /**
+     * Gets the result of a single balloon pop.  (This is not a required (inheriting) function.)
+     */
+    ,getSingleBalloonOption: function(column, row) {
+        var option = this.clone();
+        option.columns[column][row] = false;
+        return option;
+    }
+    
+    /**
+     * Gets the result of popping two balloons next to each other (horizontally).
+     */
+    ,getHorizontalBalloonOption: function(column, row) {
+        var option = this.clone();
+        option.columns[column][row] = false;
+        option.columns[column+1][row] = false;
+        return option;
+    }
+    
+    /**
+     * Gets the result of popping two balloons on top of each other (vertically).
+     */
+    ,getVerticalBalloonOption: function(column, row) {
+        var option = this.clone();
+        option.columns[column][row] = false;
+        option.columns[column][row+1] = false;
+        return option;
+    }
+    
+    /**
+     * Gets the result of popping two balloons on top of each other (vertically).
+     */
+    ,getSquareBalloonOption: function(column, row) {
+        var option = this.clone();
+        option.columns[column][row] = false;
+        option.columns[column][row+1] = false;
+        option.columns[column+1][row] = false;
+        option.columns[column+1][row+1] = false;
+        return option;
+    }
+    
+}); //end of PoppingBalloons class
+
+
+
+
+var InteractivePoppingBalloonsView = Class.create({
+    
+    /**
+     * Constructor.
+     */
+    initialize: function(position) {
+        this.position = position;
+    }
+    
+    /**
+     * Draws the board.
+     */
+    ,draw: function(containerElement, listener) {
+        //clear out the other children of the container element
+        while (containerElement.hasChildNodes()) {
+            containerElement.removeChild(containerElement.firstChild);
+        }
+        var svgNS = "http://www.w3.org/2000/svg";
+        var boardSvg = document.createElementNS(svgNS, "svg");
+        //now add the new board to the container
+        containerElement.appendChild(boardSvg);
+        var boardPixelSize = Math.min(window.innerHeight, window.innerWidth - 200);
+        //var boardPixelSize = 10 + (this.position.sideLength + 4) * 100
+        boardSvg.setAttributeNS(null, "width", boardPixelSize);
+        boardSvg.setAttributeNS(null, "height", boardPixelSize);
+        
+        var width = this.position.getWidth();
+        var height = this.position.getHeight();
+        
+        //get some dimensions based on the canvas size
+        var maxCircleWidth = (boardPixelSize - 10) / width;
+        var maxCircleHeight = (boardPixelSize - 10) / (height + 2);
+        var maxDiameter = Math.min(maxCircleWidth, maxCircleHeight);
+        var padPercentage = .2;
+        var boxSide = maxDiameter;
+        var nodeRadius = Math.floor(.5 * maxDiameter * (1-padPercentage));
+        var nodePadding = Math.floor(maxDiameter * padPercentage);
+        
+        //draw the board
+        for (var colIndex = 0; colIndex < width; colIndex++) {
+            //draw the boxes in this column
+            for (var rowIndex = 0; rowIndex < height; rowIndex ++) {
+                var cx = 5 + Math.floor((colIndex + .5) * boxSide);
+                var cy = 5 + Math.floor((rowIndex + .5) * boxSide);
+                if (this.position.columns[colIndex][rowIndex]) {
+                    //there is a balloon here
+                    var circle = document.createElementNS(svgNS,"circle"); //the balloon
+                    circle.setAttributeNS(null, "cx", cx);
+                    circle.setAttributeNS(null, "cy", cy);
+                    circle.setAttributeNS(null, "r", nodeRadius);
+                    circle.style.stroke = "black";
+                    circle.style.strokeWidth = 1;
+                    circle.style.fill = "red";
+                    if (listener != undefined) {
+                        var player = listener;
+                        circle.popType = "single";
+                        circle.column = colIndex;
+                        circle.row = rowIndex;
+                        circle.onclick = function(event) {player.handleClick(event);}
+                        this.position.getSingleBalloonOption(colIndex, rowIndex);
+                    }
+                    boardSvg.appendChild(circle);
+                    
+                    //now check for other nearby balloons
+                    if (colIndex + 1 < width && this.position.columns[colIndex+1][rowIndex]) {
+                        //there is a balloon to the right (as well)
+                        var square = document.createElementNS(svgNS,"rect");
+                        var squareWidth = boxSide * padPercentage;
+                        var squareX = cx + nodeRadius;
+                        var squareY = cy - squareWidth/2;
+                        square.setAttributeNS(null, "x", squareX + "");
+                        square.setAttributeNS(null, "y", squareY + "");
+                        square.setAttributeNS(null, "width", squareWidth + "");
+                        square.setAttributeNS(null, "height", squareWidth + "");
+                        square.style.stroke = "black";
+                        square.style.strokeWidth = 1;
+                        square.style.fill = "blue";
+                        if (listener != undefined) {
+                            var player = listener;
+                            square.popType = "horizontal";
+                            square.column = colIndex;
+                            square.row = rowIndex;
+                            square.onclick = function(even) {player.handleClick(event);}
+                        }
+                        boardSvg.appendChild(square);
+                    }
+                    
+                    if (rowIndex + 1 < height && this.position.columns[colIndex][rowIndex + 1]) {
+                        //there is a balloon below this one (as well)
+                        var square = document.createElementNS(svgNS,"rect");
+                        var squareWidth = boxSide * padPercentage;
+                        var squareX = cx - squareWidth/2;
+                        var squareY = cy + nodeRadius;
+                        square.setAttributeNS(null, "x", squareX + "");
+                        square.setAttributeNS(null, "y", squareY + "");
+                        square.setAttributeNS(null, "width", squareWidth + "");
+                        square.setAttributeNS(null, "height", squareWidth + "");
+                        square.style.stroke = "black";
+                        square.style.strokeWidth = 1;
+                        square.style.fill = "blue";
+                        if (listener != undefined) {
+                            var player = listener;
+                            square.popType = "vertical";
+                            square.column = colIndex;
+                            square.row = rowIndex;
+                            square.onclick = function(even) {player.handleClick(event);}
+                        }
+                        boardSvg.appendChild(square);
+                        
+                    }
+                    
+                }
+                //check to see if there should be a quad balloon popper
+                if (colIndex + 1 < width && rowIndex + 1 < height && 
+                    ((this.position.columns[colIndex + 1][rowIndex + 1] &&
+                      this.position.columns[colIndex][rowIndex]) ||
+                     (this.position.columns[colIndex + 1][rowIndex] &&
+                      this.position.columns[colIndex][rowIndex + 1]))) {
+                    //there are diagonal balloons, so we should be able to pop the quad
+                    
+                    var square = document.createElementNS(svgNS,"rect");
+                    var squareWidth = 2.2 * boxSide * padPercentage;
+                    var squareX = cx + .707 * nodeRadius; 
+                    var squareY = cy + .707 * nodeRadius;
+                    square.setAttributeNS(null, "x", squareX + "");
+                    square.setAttributeNS(null, "y", squareY + "");
+                    square.setAttributeNS(null, "width", squareWidth + "");
+                    square.setAttributeNS(null, "height", squareWidth + "");
+                    square.style.stroke = "black";
+                    square.style.strokeWidth = 1;
+                    square.style.fill = "yellow";
+                    if (listener != undefined) {
+                        var player = listener;
+                        square.popType = "square";
+                        square.column = colIndex;
+                        square.row = rowIndex;
+                        square.onclick = function(even) {player.handleClick(event);}
+                    }
+                    boardSvg.appendChild(square);
+                }
+            }
+        }
+    }
+
+    /**
+     * Handles the mouse click.
+     */
+    ,getNextPositionFromClick: function(event, currentPlayer, containerElement, player) {
+        var column = event.target.column;
+        var row = event.target.row;
+        var chosenOption; //
+        var self = this;
+        if (event.target.popType == "single") {
+            chosenOption = self.position.getSingleBalloonOption(column, row);
+        } else if (event.target.popType == "horizontal") {
+            chosenOption = self.position.getHorizontalBalloonOption(column, row);
+        } else if (event.target.popType == "vertical") {
+            chosenOption = self.position.getVerticalBalloonOption(column, row);
+        } else if (event.target.popType == "square") {
+            chosenOption = self.position.getSquareBalloonOption(column, row);
+        } else {
+            console.log("Didn't recognize the popType: " + event.target.popType);
+        }
+        
+        player.sendMoveToRef(chosenOption);
+    }
+    
+}); //end of InteractivePoppingBalloonsView class
+
+/**
+ * View Factory for PoppingBalloons
+ */
+var InteractivePoppingBalloonsViewFactory = Class.create({
+    /**
+     * Constructor
+     */
+    initialize: function() {
+    }
+
+    /**
+     * Returns an interactive view
+     */
+    ,getInteractiveBoard: function(position) {
+        return new InteractivePoppingBalloonsView(position);
+    }
+
+    /**
+     * Returns a view.
+     */
+    ,getView: function(position) {
+        return this.getInteractiveBoard(position);
+    }
+
+}); //end of InteractivePoppingBalloonsViewFactory
+
+/**
+ * Launches a new PoppingBalloons game.
+ */
+function newPoppingBalloonsGame() {
+    var viewFactory = new InteractivePoppingBalloonsViewFactory();
+    var playDelay = 1000;
+    var playerOptions = getCommonPlayerOptions(viewFactory, playDelay, 1, 5);
+    var width = parseInt($('boardWidth').value);
+    var height = parseInt($('boardHeight').value);
+    var controlForm = $('gameOptions');
+    var leftPlayer = parseInt(getSelectedRadioValue(controlForm.elements['leftPlayer']));
+    var rightPlayer =  parseInt(getSelectedRadioValue(controlForm.elements['rightPlayer']));
+    var game = new PoppingBalloons(height, width);
     var players = [playerOptions[leftPlayer], playerOptions[rightPlayer]];
     var ref = new Referee(game, players, viewFactory, "MainGameBoard", $('messageBox'), controlForm);
 }
