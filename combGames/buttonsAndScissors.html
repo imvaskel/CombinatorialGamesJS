@@ -26,13 +26,15 @@
         <form id = "gameOptions" accept-charset="utf-8">
         </form>
         <script>
-            var gameOptionsForm = createBasicGridGameOptions(7, 12, 8, 4, 8, 5);
+            var gameOptionsForm = createBasicGridGameOptions(7, 12, 8, 4, 8, 5, ButtonsAndScissors);
             $('gameOptions').appendChild(gameOptionsForm);
             $('rulesButton').onclick = showRules;
             $("starter").style.width = ($("gameControls").clientWidth ) + "px";
         </script>
     </div>
     <div class = "gameBoard" id = "buttonsAndScissorsBoard"></div>
+    
+    <p style = "clear:both; padding: 5px;">Check out <a href = "index.html">other combinatorial games</a>.</p>
   </body>
 
 </html>

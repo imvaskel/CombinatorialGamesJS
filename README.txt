@@ -33,7 +33,7 @@ Notes:
 
 This directory holds the other .js files that I keep online.  The rest of the games are in the combGames folder.  They are all there so that the .html files in the combGames directory can be uploaded to:
 
-https://turing.plymouth.edu/~kgb1013/DB/combGames/
+https://kyleburke.info/DB/combGames/
 
 as is and everything will work fine.
 

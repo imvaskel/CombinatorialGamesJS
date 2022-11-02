@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset = "utf-8">
+    <title>Popping Balloons</title>
+    <link rel = "stylesheet" type = "text/css" href = "cgtStyle.css" />
+    <script src = "../prototype.js" type = "text/javascript"></script>
+    <script src = "../paithanLibraries2013.js" type = "text/javascript"></script>
+    <script src = "combinatorialGames.js" type = "text/javascript"></script>
+    <script src = "../../sprouts/sprouts2022/NinePiecesOrLess.js" type = "text/javascript"></script>
+    <script>
+      var rulesText = "On your turn, choose to pop either one balloon (red circle), two neighboring balloons (blue square) or all balloons in a square (yellow square).";
+      function newGame() {
+        newPoppingBalloonsJohnHenryGame();
+      }
+      //specific stuff for the John Henry version
+      function createSpecificGridGameOptions(minWidth, maxWidth, defaultWidth, minHeight, maxHeight, defaultHeight) {
+            //do some normalization for games with only one size parameter (e.g. Atropos)
+            minHeight = minHeight || minWidth;
+            maxHeight = maxHeight || maxWidth;
+            defaultHeight = defaultHeight || defaultWidth;
+
+            var container = document.createElement("div");
+
+            var widthElement = document.createDocumentFragment();
+            var widthRange = createRangeInput(minWidth, maxWidth, defaultWidth, "boardWidth");
+            container.appendChild(createGameOptionDiv("Width", widthRange));
+
+            var heightElement = document.createDocumentFragment();
+            var heightRange = createRangeInput(minHeight, maxHeight, defaultHeight, "boardHeight");
+            container.appendChild(createGameOptionDiv("Height", heightRange));
+
+            var leftPlayerElement = document.createDocumentFragment();
+            leftPlayerElement.appendChild(document.createTextNode("(Blue plays first.)"));
+            leftPlayerElement.appendChild(document.createElement("br"));
+            var leftRadio = getRadioPlayerOptions(CombinatorialGame.prototype.LEFT);
+            leftPlayerElement.appendChild(leftRadio);
+            container.appendChild(createGameOptionDiv("Blue:", leftPlayerElement));
+
+            var rightRadio = getJohnHenryRadioPlayerOption(CombinatorialGame.prototype.RIGHT);
+            container.appendChild(createGameOptionDiv("Red:", rightRadio));
+
+            var startButton = document.createElement("input");
+            startButton.type = "button";
+            startButton.id = "starter";
+            startButton.value = "Start Game";
+            startButton.onclick = newGame;
+            container.appendChild(startButton);
+
+            return container;
+    }
+
+    /**
+    * Gets a radio group of buttons for a player's controller options.
+    */
+    function getJohnHenryRadioPlayerOption(playerId) {
+        var playerName;
+        var defaultIndex;
+        if (playerId == CombinatorialGame.prototype.LEFT) {
+            playerName = "left";
+            defaultIndex = 0;
+        } else if (playerId == CombinatorialGame.prototype.RIGHT) {
+            playerName = "right";
+            defaultIndex = 0;
+        } else {
+            console.log("getRadioPlayerOptions got an incorrect playerId");
+        }
+        return createRadioGroup(playerName + "Player",  ["NinePiecesOrLess"], defaultIndex); // "Professional (hangs your browser)"
+    }
+    
+    
+    function newPoppingBalloonsJohnHenryGame() {
+        var viewFactory = new InteractivePoppingBalloonsViewFactory();
+        var playDelay = 1000;
+        var playerOptions = getCommonPlayerOptions(viewFactory, playDelay, 1, 5);
+        var width = parseInt($('boardWidth').value);
+        var height = parseInt($('boardHeight').value);
+        var controlForm = $('gameOptions');
+        var leftPlayer = parseInt(getSelectedRadioValue(controlForm.elements['leftPlayer']));
+        var rightPlayer =  parseInt(getSelectedRadioValue(controlForm.elements['rightPlayer']));
+        var game = new PoppingBalloons(height, width);
+        var players = [playerOptions[leftPlayer], new NinePiecesOrLess()];
+        var ref = new Referee(game, players, viewFactory, "MainGameBoard", $('messageBox'), controlForm);
+    }
+    </script>
+  </head>
+  <body>
+    <h1>Popping Balloons</h1>
+    <h2 id = "messageBox">Choose your Game</h2>
+    <div id = "gameControls">
+        <div class = "gameOption centered">
+            <div class = "optionTitle">Rules</div>
+            <p id = "rules"></p>
+            <button id = "rulesButton">Show</button>
+        </div>
+        <form id = "gameOptions" accept-charset="utf-8">
+        </form>
+        <script>
+            var minWidth = 3;
+            var maxWidth = 10;
+            var defaultWidth = 5;
+            var minHeight = 3;
+            var maxHeight = 10;
+            var defaultHeight = 5;
+            var gameOptionsForm = createSpecificGridGameOptions(minWidth, maxWidth, defaultWidth, minHeight, maxHeight, defaultHeight);
+            $('gameOptions').appendChild(gameOptionsForm);
+            $('rulesButton').onclick = showRules;
+            $("starter").style.width = ($("gameControls").clientWidth ) + "px";
+        </script>
+    </div>
+    <div class = "gameBoard" id = "MainGameBoard"></div>
+  </body>
+
+</html>

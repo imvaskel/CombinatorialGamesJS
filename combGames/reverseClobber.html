@@ -27,13 +27,15 @@
         <form id = "gameOptions" accept-charset="utf-8">
         </form>
         <script>
-            var gameOptionsForm = createBasicGridGameOptions(3, 6, 4, 3, 5, 4);
+            var gameOptionsForm = createBasicGridGameOptions(3, 6, 4, 3, 5, 4, ReverseClobber);
             $('gameOptions').appendChild(gameOptionsForm);
             $('rulesButton').onclick = showRules;
             $("starter").style.width = ($("gameControls").clientWidth ) + "px";
         </script>
     </div>
     <div class = "gameBoard" id = "clobberBoard"></div>
+    
+    <p style = "clear:both; padding: 5px;">Check out <a href = "index.html">other combinatorial games</a>.</p>
   </body>
 
 </html>

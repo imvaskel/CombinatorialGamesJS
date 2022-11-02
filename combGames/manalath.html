@@ -16,6 +16,7 @@
   </head>
   <body>
     <h1>Manalath!</h1>
+    <h2>Programmed by Chrissy Shatney</h2>
     <h2 id = "messageBox">Choose your Game</h2>
     <div id = "gameControls">
         <div class = "gameOption centered">
@@ -26,13 +27,15 @@
         <form id = "gameOptions" accept-charset="utf-8">
         </form>
         <script>
-            var gameOptionsForm = createBasicGridGameOptionsForManalath(3, 9, 5, 3, 9, 5);
+            var gameOptionsForm = createBasicGridGameOptionsForManalath(3, 9, 5, 3, 9, 5, Manalath);
             $('gameOptions').appendChild(gameOptionsForm);
             $('rulesButton').onclick = showRules;
             $("starter").style.width = ($("gameControls").clientWidth ) + "px";
         </script>
     </div>
     <div class = "gameBoard" id = "gameCanvas"></div>
+    
+    <p style = "clear:both; padding: 5px;">Check out <a href = "index.html">other combinatorial games</a>.</p>
   </body>
 
 </html>

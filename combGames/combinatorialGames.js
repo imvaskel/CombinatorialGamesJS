@@ -42,11 +42,14 @@ var CombinatorialGame = Class.create({
      * Determines whether the given player has an option
      */
     hasOption: function(player, position) {
+        if (position == null || position === undefined) {
+            return false;
+        }
         var options = this.getOptionsForPlayer(player);
         // console.log("Player " + player + " has " + options.length + " options.");
         for (var i = 0; i < options.length; i++) {
             // console.log("The option is: " + options[i]);
-            if (position.equals(options[i])) return true;
+            if (options[i].equals(position)) return true;
         }
         return false;
     }
@@ -62,7 +65,7 @@ var CombinatorialGame = Class.create({
      * Gets the player's identity (Blue/Black/Vertical/etc) as a string.
      */
     ,getPlayerName: function(playerIndex) {
-        return this.playerNames[playerIndex];
+        return this.__proto__.PLAYER_NAMES[playerIndex];
     }
 
 
@@ -72,48 +75,759 @@ CombinatorialGame.prototype.LEFT = 0;
 CombinatorialGame.prototype.RIGHT = 1;
 CombinatorialGame.prototype.PLAYER_NAMES = ["Left", "Right"];
 
+
 //end of CombinatorialGame
 
-var GridDistanceGame = Class.create(CombinatorialGame, {
+var NoGo = Class.create(CombinatorialGame, {
 
     /**
-     * Constructor.
+     * Constructor.  Creates a distance game on a grid where you aren't allowed to play at the sameDistances or differentDistances.  Either columnsOrWidth are both natural numbers as the dimensions, or height is undefined and columnsOrWidth is the columns to copy.
      */
-    initialize: function(height, width, sameDistances, differentDistances, blueLocations, redLocations) {
-        this.sameDistances = sameDistances;
-        this.differentDistances = differentDistances;
-        this.blueLocations = blueLocations || [];
-        this.redLocations = redLocations || [];
-        this.height = height;
-        this.width = width;
-    }
-
-    /**
-     * Checks that the piece positions are legal.
-     */
-    ,isPositionLegal: function() {
-        //check that the blues are legal
-        for (var i = 0; i < blueLocations.length; i++) {
-            var blue = blueLocations[i];
-            //check that the piece isn't off the board
-            if (blue[0] < 0 || blue[0] >= width || blue[1] < 0 || blue[1] >= height) {
-                console.log("Error: blue piece is at an illegal position.");
-                return false;
+    initialize: function(columnsOrWidth, height) {
+        this.UNCOLORED = 2;
+        if (height === undefined) {
+            //no fourth parameter, so columnsOrWidth represents the columns.
+            this.columns = columnsOrWidth; //this will get replaced shortly
+            this.columns = this.cloneColumns(columnsOrWidth);
+        } else {
+            this.columns = [];
+            for (var i = 0; i < columnsOrWidth; i++) {
+                var column = [];
+                this.columns.push(column);
+                for (var j = 0; j < height; j++) {
+                    column.push(this.UNCOLORED);
+                }
             }
-            //check that it doesn't overlap with one of the red pieces
-            for (var j = 0; j < redLocations.length; j++) {
-                var red = redLocations[j];
-                if (red[0] == blue[0] && red[1] == blue[1]) {
-                    console.log("Error: red piece and blue piece at the same place!");
+        }
+        this.playerNames = ["Black", "White"];
+    }
+    
+    /**
+     * Clones the columns.
+     */
+    ,cloneColumns: function(columns) {
+        var columnsClone = [];
+        for (var i = 0; i < this.getWidth(); i++) {
+            var columnClone = [];
+            columnsClone.push(columnClone);
+            for (var j = 0; j < this.getHeight(); j++) {
+                columnClone.push(columns[i][j]);
+            }
+        }
+        return columnsClone;
+    }
+    
+    /**
+     * Clones this.
+     */
+    ,clone: function() {
+        return new NoGo(this.columns);
+    }
+    
+    /**
+     * Returns the width of this board.
+     */
+    ,getWidth: function() {
+        return this.columns.length;
+    }
+    
+    /**
+     * Returns the height of this board.
+     */
+    ,getHeight: function() {
+        if (this.getWidth() == 0) {
+            return 0;
+        } else {
+            return this.columns[0].length;
+        }
+    }
+    
+    /**
+     * Equals!
+     */
+    ,equals: function(other) {
+        //check that the dimensions match
+        if (this.getWidth() != other.getWidth() || this.getHeight() != other.getHeight()) {
+            return false;
+        }
+        //now check that all the cells are equal
+        for (var col = 0; col < this.columns.length; col++) {
+            for (var row = 0; row < this.columns[col].length; row++) {
+                if (this.columns[col][row] != other.columns[col][row]) {
                     return false;
                 }
             }
         }
-        //check that the reds are legal
         return true;
+    }
+    
+    /**
+     * Returns a list of all connected components.
+     */
+    ,getConnectedComponents: function() {
+        var components = this.getConnectedComponentsWithColor(CombinatorialGame.prototype.LEFT);
+        var rightComponents = this.getConnectedComponentsWithColor(CombinatorialGame.prototype.RIGHT);
+        for (var i = 0; i < rightComponents.length; i++) {
+            components.push(rightComponents[i]);
+        }
+        return components;
+    }
+    
+    /**
+     * Returns a list of lists of connected components of a color.
+     */
+    ,getConnectedComponentsWithColor: function(playerId) {
+        //create a 2-d array of booleans
+        var marked = [];
+        for (var i = 0; i < this.getWidth(); i++) {
+            var markedColumn = [];
+            marked.push(markedColumn);
+            for (var j = 0; j < this.getHeight(); j++) {
+                markedColumn.push(false);
+            }
+        }
+        
+        var components = [];
+        //go through each vertex, build a component around it if it's the right color and not marked
+        for (var column = 0; column < this.getWidth(); column++) {
+            for (var row = 0; row < this.getHeight(); row++) {
+                if (!marked[column][row] && this.columns[column][row] == playerId) {
+                    var component = [];
+                    this.addToConnectedComponentAround(column, row, component, playerId, marked);
+                    components.push(component);
+                }
+            }
+        }
+        return components;
+    }
+    
+    /**
+     * Returns the connected same-color component around a vertex.  Only 
+     */
+    ,addToConnectedComponentAround: function(column, row, component, playerId, marked) {
+        if (!marked[column][row] && this.columns[column][row] == playerId) {
+            marked[column][row] = true;
+            component.push([column, row]);
+            
+            //check the four neighboring vertices
+            var neighborCol;
+            var neighborRow;
+            //check above
+            if (row > 0) {
+                neighborCol = column;
+                neighborRow = row - 1;
+                this.addToConnectedComponentAround(neighborCol, neighborRow, component, playerId, marked);
+            } 
+            //check to the right
+            if (column < this.getWidth() - 1) {
+                neighborCol = column + 1;
+                neighborRow = row;
+                this.addToConnectedComponentAround(neighborCol, neighborRow, component, playerId, marked);
+            }
+            //check below
+            if (row < this.getHeight() - 1) {
+                neighborCol = column;
+                neighborRow = row + 1;
+                this.addToConnectedComponentAround(neighborCol, neighborRow, component, playerId, marked);
+            }
+            //check left
+            if (column > 0) {
+                neighborCol = column - 1;
+                neighborRow = row;
+                this.addToConnectedComponentAround(neighborCol, neighborRow, component, playerId, marked);
+            }
+        }
+    }
+    
+    /**
+     * Checks that all components have a liberty.
+     */
+    ,allComponentsHaveLiberty: function() {
+        var components = this.getConnectedComponents();
+        for (var i = 0; i < components.length; i++) {
+            var component = components[i];
+            if (!this.componentHasLiberty(component)) {
+                return false;
+            }
+        }
+        return true;
+    }
+    
+    /**
+     * Checks that a component has a liberty.
+     */
+    ,componentHasLiberty: function(component) {
+        for (var i = 0; i < component.length; i++) {
+            var vertex = component[i];
+            var column = vertex[0];
+            var row = vertex[1];
+            //check the four neighbors
+            //check above
+            if (row > 0 && this.columns[column][row-1] == this.UNCOLORED) {
+                return true;
+            }
+            //check right
+            if (column < this.getWidth() -1 && this.columns[column+1][row] == this.UNCOLORED) {
+                return true;
+            }
+            //check below
+            if (row < this.getHeight() - 1 && this.columns[column][row+1] == this.UNCOLORED) {
+                return true;
+            }
+            //check left
+            if (column > 0 && this.columns[column-1][row] == this.UNCOLORED) {
+                return true;
+            }
+        }
+        return false;
+    }
+    
+    /**
+     * Gets the options.
+     */
+    ,getOptionsForPlayer: function(playerId) {
+        var options = [];
+        
+        for (var column = 0; column < this.getWidth(); column ++) {
+            for (var row = 0; row < this.getHeight(); row++) {
+                if (this.columns[column][row] == this.UNCOLORED) {
+                    if (this.isMoveLegal(column, row, playerId)) {
+                        //the move is legal!  Let's put it in there! :)
+                        var option = this.getOption(column, row, playerId);
+                        options.push(option);
+                    }
+                }
+            }
+        }
+        return options;
+    }
+    
+    /**
+     * Gets a single option.  This assumes that the move is legal.
+     */
+    ,getOption: function(column, row, playerId) {
+        var option = this.clone();
+        option.columns[column][row] = playerId;
+        return option;
+    }
+
+    /**
+     * Checks that changing the vertex at [column, row] to color is a legal move.
+     */
+    ,isMoveLegal: function(column, row, color) {
+        //
+        if (this.columns[column][row] != this.UNCOLORED) {
+            return false;
+        } else {
+            //[column, row] is uncolored, good!
+            var move = this.getOption(column, row, color);
+            axe = this;
+            return move.allComponentsHaveLiberty();
+        }
+    }
+
+}); //end of NoGo class
+NoGo.prototype.PLAYER_NAMES = ["Black", "White"];
+
+
+var NoGoInteractiveView = Class.create({
+    
+    /**
+     * Constructor.
+     */
+    initialize: function(position) {
+        this.position = position;
+    }
+    
+    /**
+     * Draws the board.
+     */
+    ,draw: function(containerElement, listener) {
+        //clear out the other children of the container element
+        while (containerElement.hasChildNodes()) {
+            containerElement.removeChild(containerElement.firstChild);
+        }
+        var svgNS = "http://www.w3.org/2000/svg";
+        var boardSvg = document.createElementNS(svgNS, "svg");
+        //now add the new board to the container
+        containerElement.appendChild(boardSvg);
+        var boardPixelSize = Math.min(window.innerHeight, window.innerWidth - 200);
+        //var boardPixelSize = 10 + (this.position.sideLength + 4) * 100
+        boardSvg.setAttributeNS(null, "width", boardPixelSize);
+        boardSvg.setAttributeNS(null, "height", boardPixelSize);
+        
+        var width = this.position.getWidth();
+        var height = this.position.getHeight();
+        
+        //get some dimensions based on the canvas size
+        var maxCircleWidth = (boardPixelSize - 10) / width;
+        var maxCircleHeight = (boardPixelSize - 10) / (height + 2);
+        var maxDiameter = Math.min(maxCircleWidth, maxCircleHeight);
+        var padPercentage = .2;
+        var boxSide = maxDiameter;
+        var nodeRadius = Math.floor(.5 * maxDiameter * (1-padPercentage));
+        var nodePadding = Math.floor(maxDiameter * padPercentage);
+        
+        //draw the board
+        for (var colIndex = 0; colIndex < width; colIndex++) {
+            //draw the boxes in this column
+            for (var rowIndex = 0; rowIndex < height; rowIndex ++) {
+                var circle = document.createElementNS(svgNS,"circle");
+                var centerX = 5 + Math.floor((colIndex + .5) * boxSide);
+                circle.setAttributeNS(null, "cx", centerX);
+                var centerY = 5 + Math.floor((rowIndex + .5) * boxSide);
+                circle.setAttributeNS(null, "cy", centerY);
+                circle.setAttributeNS(null, "r", nodeRadius);
+                circle.style.stroke = "black";
+                circle.style.strokeWidth = 5;
+                if (this.position.columns[colIndex][rowIndex] == CombinatorialGame.prototype.LEFT) {
+                    circle.style.fill = "black";
+                } else if (this.position.columns[colIndex][rowIndex] == CombinatorialGame.prototype.RIGHT) {
+                    circle.style.fill = "white";
+                } else {
+                    circle.style.fill = "gray";
+                    if (listener != undefined) {
+                        var player = listener;
+                        //circle will be event.target, so give it some extra attributes.
+                        circle.column = colIndex;
+                        circle.row = rowIndex;
+                        circle.onclick = function(event) {player.handleClick(event);}
+                    }
+                }
+                boardSvg.appendChild(circle);
+                //now add the edges
+                if (colIndex < width - 1) {
+                    var line = document.createElementNS(svgNS, "line");
+                    line.setAttributeNS(null, "x1", centerX + nodeRadius);
+                    line.setAttributeNS(null, "y1", centerY);
+                    line.setAttributeNS(null, "x2", centerX + boxSide - nodeRadius);
+                    line.setAttributeNS(null, "y2", centerY);
+                    line.style.stroke = "black";
+                    line.style.strokeWidth = 5;
+                    boardSvg.appendChild(line);
+                }
+                if (rowIndex < height - 1) {
+                    var line = document.createElementNS(svgNS, "line");
+                    line.setAttributeNS(null, "x1", centerX);
+                    line.setAttributeNS(null, "y1", centerY + nodeRadius);
+                    line.setAttributeNS(null, "x2", centerX);
+                    line.setAttributeNS(null, "y2", centerY + boxSide - nodeRadius);
+                    line.style.stroke = "black";
+                    line.style.strokeWidth = 5;
+                    boardSvg.appendChild(line);
+                }
+            }
+        }
+    }
+
+    /**
+     * Handles the mouse click.
+     */
+    ,getNextPositionFromClick: function(event, currentPlayer, containerElement, player) {
+        var column = event.target.column;
+        var row = event.target.row;
+        
+        if (this.position.isMoveLegal(column, row, currentPlayer)) {
+            var option = this.position.getOption(column, row, currentPlayer);
+            player.sendMoveToRef(option);
+        }
+    }
+    
+}); //end of NoGoInteractiveView class
+
+/**
+ * View Factory for NoGo
+ */
+var NoGoInteractiveViewFactory = Class.create({
+    /**
+     * Constructor
+     */
+    initialize: function() {
+    }
+
+    /**
+     * Returns an interactive view
+     */
+    ,getInteractiveBoard: function(position) {
+        return new NoGoInteractiveView(position);
+    }
+
+    /**
+     * Returns a view.
+     */
+    ,getView: function(position) {
+        return this.getInteractiveBoard(position);
+    }
+
+}); //end of NoGoInteractiveViewFactory
+
+/**
+ * Launches a new NoGo game.
+ */
+function newNoGoGame() {
+    var viewFactory = new NoGoInteractiveViewFactory();
+    var playDelay = 1000;
+    var playerOptions = getCommonPlayerOptions(viewFactory, playDelay, 1, 5);
+    var width = parseInt($('boardWidth').value);
+    var height = parseInt($('boardHeight').value);
+    var controlForm = $('gameOptions');
+    var leftPlayer = parseInt(getSelectedRadioValue(controlForm.elements['leftPlayer']));
+    var rightPlayer =  parseInt(getSelectedRadioValue(controlForm.elements['rightPlayer']));
+    var game = new NoGo(width, height);
+    var players = [playerOptions[leftPlayer], playerOptions[rightPlayer]];
+    var ref = new Referee(game, players, viewFactory, "MainGameBoard", $('messageBox'), controlForm);
+    
+}
+
+
+
+
+
+var GridDistanceGame = Class.create(CombinatorialGame, {
+
+    /**
+     * Constructor.  Creates a distance game on a grid where you aren't allowed to play at the sameDistances or differentDistances.  Either columnsOrWidth are both natural numbers as the dimensions, or height is undefined and columnsOrWidth is the columns to copy.
+     */
+    initialize: function(sameDistances, differentDistances, columnsOrWidth, height) {
+        this.UNCOLORED = 2;
+        this.sameDistances = sameDistances || [];
+        this.differentDistances = differentDistances || [];
+        if (height === undefined) {
+            //no fourth parameter, so columnsOrWidth represents the columns.
+            this.columns = columnsOrWidth; //this will get replaced shortly
+            this.columns = this.cloneColumns(columnsOrWidth);
+        } else {
+            this.columns = [];
+            for (var i = 0; i < columnsOrWidth; i++) {
+                var column = [];
+                this.columns.push(column);
+                for (var j = 0; j < height; j++) {
+                    column.push(this.UNCOLORED);
+                }
+            }
+        }
+        this.playerNames = ["Blue", "Red"];
+    }
+    
+    /**
+     * Clones the columns.
+     */
+    ,cloneColumns: function(columns) {
+        var columnsClone = [];
+        for (var i = 0; i < this.getWidth(); i++) {
+            var columnClone = [];
+            columnsClone.push(columnClone);
+            for (var j = 0; j < this.getHeight(); j++) {
+                columnClone.push(columns[i][j]);
+            }
+        }
+        return columnsClone;
+    }
+    
+    /**
+     * Clones this.
+     */
+    ,clone: function() {
+        return new GridDistanceGame(this.sameDistances, this.differentDistances, this.columns);
+    }
+    
+    /**
+     * Returns the width of this board.
+     */
+    ,getWidth: function() {
+        return this.columns.length;
+    }
+    
+    /**
+     * Returns the height of this board.
+     */
+    ,getHeight: function() {
+        if (this.getWidth() == 0) {
+            return 0;
+        } else {
+            return this.columns[0].length;
+        }
+    }
+    
+    /**
+     * Equals!
+     */
+    ,equals: function(other) {
+        //check that the dimensions match
+        if (this.getWidth() != other.getWidth() || this.getHeight() != other.getHeight()) {
+            return false;
+        }
+        //now check that all the cells are equal
+        for (var col = 0; col < this.columns.length; col++) {
+            for (var row = 0; row < this.columns[col].length; row++) {
+                if (this.columns[col][row] != other.columns[col][row]) {
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
+    
+    /**
+     * Gets an array of all coordinates (2-tuple) that are at a given distance from the given coordinates on this board.
+     */
+    ,getDistanceCoordinatesFrom: function(column, row, distance) {
+        var coordinates = [];
+        //these will be laid out in a diamond from (column, row).
+        
+        //first do those along the top-right edge
+        for (var i = 0; i < distance; i++) {
+            var coordinate = [column + i, row - distance + i];
+            if (coordinate[0] < this.getWidth() && coordinate[1] >= 0) {
+                coordinates.push(coordinate);
+            }
+        }
+        //now the bottom-right edge
+        for (var i = 0; i < distance; i++) {
+            var coordinate = [column + distance - i, row + i];
+            if (coordinate[0] < this.getWidth() && coordinate[1] < this.getHeight()) {
+                coordinates.push(coordinate);
+            }
+        }
+        //now the bottom-left edge
+        for (var i = 0; i < distance; i++) {
+            var coordinate = [column - i, row + distance - i];
+            if (coordinate[0] >= 0 && coordinate[1] < this.getHeight()) {
+                coordinates.push(coordinate);
+            }
+        }
+        //now the top-left edge
+        for (var i = 0; i < distance; i++) {
+            var coordinate = [column - distance + i, row - i];
+            if (coordinate[0] >= 0 && coordinate[1] >= 0) {
+                coordinates.push(coordinate);
+            }
+        }
+        return coordinates;
+    }
+    
+    /**
+     * Gets the options.
+     */
+    ,getOptionsForPlayer: function(playerId) {
+        var options = [];
+        
+        for (var column = 0; column < this.getWidth(); column ++) {
+            for (var row = 0; row < this.getHeight(); row++) {
+                if (this.columns[column][row] == this.UNCOLORED) {
+                    if (this.isMoveLegal(column, row, playerId)) {
+                        //the move is legal!  Let's put it in there! :)
+                        var option = this.getOption(column, row, playerId);
+                        options.push(option);
+                    }
+                }
+            }
+        }
+        return options;
+    }
+    
+    /**
+     * Gets a single option.  This assumes that the move is legal.
+     */
+    ,getOption: function(column, row, playerId) {
+        var option = this.clone();
+        option.columns[column][row] = playerId;
+        return option;
+    }
+
+    /**
+     * Checks that changing the vertex at [column, row] to color is a legal move.
+     */
+    ,isMoveLegal: function(column, row, color) {
+        //
+        if (this.columns[column][row] != this.UNCOLORED) {
+            return false;
+        } else {
+            //[column, row] is uncolored, good!
+            
+            //now check that the vertices at the illegal same distances have a different color
+            for (var i = 0; i < this.sameDistances; i++) {
+                var distance = this.sameDistances[i];
+                var coordinates = this.getDistanceCoordinatesFrom(column, row, distance);
+                for (var j = 0; j < coordinates.length; j++) {
+                    var coordinate = coordinates[j];
+                    var colorAtCoordinate = this.columns[coordinate[0]][coordinate[1]];
+                    //make sure none of these have the same color  (color won't be uncolored, so we're safe there too!)
+                    if (colorAtCoordinate == color) {
+                        return false;
+                    }
+                }
+            }
+            
+            //now check that it doesn't have a different color from the illegal different distances
+            for (var i = 0; i < this.differentDistances; i++) {
+                var distance = this.differentDistances[i];
+                var coordinates = this.getDistanceCoordinatesFrom(column, row, distance);
+                for (var j = 0; j < coordinates.length; j++) {
+                    var coordinate = coordinates[j];
+                    var colorAtCoordinate = this.columns[coordinate[0]][coordinate[1]];
+                    //make sure none of these have the same color  (color won't be uncolored, so we're safe there too!)
+                    if (colorAtCoordinate != this.UNCOLORED && colorAtCoordinate != color) {
+                        return false;
+                    }
+                }
+            }
+            return true;
+        }
     }
 
 }); //end of GridDistanceGame class
+GridDistanceGame.prototype.PLAYER_NAMES = ["Blue", "Red"];
+
+
+var GridDistanceGameInteractiveView = Class.create({
+    
+    /**
+     * Constructor.
+     */
+    initialize: function(position) {
+        this.position = position;
+    }
+    
+    /**
+     * Draws the board.
+     */
+    ,draw: function(containerElement, listener) {
+        //clear out the other children of the container element
+        while (containerElement.hasChildNodes()) {
+            containerElement.removeChild(containerElement.firstChild);
+        }
+        var svgNS = "http://www.w3.org/2000/svg";
+        var boardSvg = document.createElementNS(svgNS, "svg");
+        //now add the new board to the container
+        containerElement.appendChild(boardSvg);
+        var boardPixelSize = Math.min(window.innerHeight, window.innerWidth - 200);
+        //var boardPixelSize = 10 + (this.position.sideLength + 4) * 100
+        boardSvg.setAttributeNS(null, "width", boardPixelSize);
+        boardSvg.setAttributeNS(null, "height", boardPixelSize);
+        
+        var width = this.position.getWidth();
+        var height = this.position.getHeight();
+        
+        //get some dimensions based on the canvas size
+        var maxCircleWidth = (boardPixelSize - 10) / width;
+        var maxCircleHeight = (boardPixelSize - 10) / (height + 2);
+        var maxDiameter = Math.min(maxCircleWidth, maxCircleHeight);
+        var padPercentage = .2;
+        var boxSide = maxDiameter;
+        var nodeRadius = Math.floor(.5 * maxDiameter * (1-padPercentage));
+        var nodePadding = Math.floor(maxDiameter * padPercentage);
+        
+        //draw the board
+        for (var colIndex = 0; colIndex < width; colIndex++) {
+            //draw the boxes in this column
+            for (var rowIndex = 0; rowIndex < height; rowIndex ++) {
+                var circle = document.createElementNS(svgNS,"circle");
+                var centerX = 5 + Math.floor((colIndex + .5) * boxSide);
+                circle.setAttributeNS(null, "cx", centerX);
+                var centerY = 5 + Math.floor((rowIndex + .5) * boxSide);
+                circle.setAttributeNS(null, "cy", centerY);
+                circle.setAttributeNS(null, "r", nodeRadius);
+                circle.style.stroke = "black";
+                circle.style.strokeWidth = 5;
+                if (this.position.columns[colIndex][rowIndex] == CombinatorialGame.prototype.LEFT) {
+                    circle.style.fill = "blue";
+                } else if (this.position.columns[colIndex][rowIndex] == CombinatorialGame.prototype.RIGHT) {
+                    circle.style.fill = "red";
+                } else {
+                    circle.style.fill = "white";
+                    if (listener != undefined) {
+                        var player = listener;
+                        //circle will be event.target, so give it some extra attributes.
+                        circle.column = colIndex;
+                        circle.row = rowIndex;
+                        circle.onclick = function(event) {player.handleClick(event);}
+                    }
+                }
+                boardSvg.appendChild(circle);
+                //now add the edges
+                if (colIndex < width - 1) {
+                    var line = document.createElementNS(svgNS, "line");
+                    line.setAttributeNS(null, "x1", centerX + nodeRadius);
+                    line.setAttributeNS(null, "y1", centerY);
+                    line.setAttributeNS(null, "x2", centerX + boxSide - nodeRadius);
+                    line.setAttributeNS(null, "y2", centerY);
+                    line.style.stroke = "black";
+                    line.style.strokeWidth = 5;
+                    boardSvg.appendChild(line);
+                }
+                if (rowIndex < height - 1) {
+                    var line = document.createElementNS(svgNS, "line");
+                    line.setAttributeNS(null, "x1", centerX);
+                    line.setAttributeNS(null, "y1", centerY + nodeRadius);
+                    line.setAttributeNS(null, "x2", centerX);
+                    line.setAttributeNS(null, "y2", centerY + boxSide - nodeRadius);
+                    line.style.stroke = "black";
+                    line.style.strokeWidth = 5;
+                    boardSvg.appendChild(line);
+                }
+            }
+        }
+    }
+
+    /**
+     * Handles the mouse click.
+     */
+    ,getNextPositionFromClick: function(event, currentPlayer, containerElement, player) {
+        var column = event.target.column;
+        var row = event.target.row;
+        
+        if (this.position.isMoveLegal(column, row, currentPlayer)) {
+            var option = this.position.getOption(column, row, currentPlayer);
+            player.sendMoveToRef(option);
+        }
+    }
+    
+}); //end of GridDistanceGameInteractiveView class
+
+/**
+ * View Factory for BinaryGeography
+ */
+var GridDistanceGameInteractiveViewFactory = Class.create({
+    /**
+     * Constructor
+     */
+    initialize: function() {
+    }
+
+    /**
+     * Returns an interactive view
+     */
+    ,getInteractiveBoard: function(position) {
+        return new GridDistanceGameInteractiveView(position);
+    }
+
+    /**
+     * Returns a view.
+     */
+    ,getView: function(position) {
+        return this.getInteractiveBoard(position);
+    }
+
+}); //end of GridDistanceGameInteractiveViewFactory
+
+/**
+ * Launches a new Col game.
+ */
+function newColGame() {
+    var viewFactory = new GridDistanceGameInteractiveViewFactory();
+    var playDelay = 1000;
+    var playerOptions = getCommonPlayerOptions(viewFactory, playDelay, 1, 5);
+    var width = parseInt($('boardWidth').value);
+    var height = parseInt($('boardHeight').value);
+    var controlForm = $('gameOptions');
+    var leftPlayer = parseInt(getSelectedRadioValue(controlForm.elements['leftPlayer']));
+    var rightPlayer =  parseInt(getSelectedRadioValue(controlForm.elements['rightPlayer']));
+    var game = new GridDistanceGame([1], [], width, height);
+    var players = [playerOptions[leftPlayer], playerOptions[rightPlayer]];
+    var ref = new Referee(game, players, viewFactory, "MainGameBoard", $('messageBox'), controlForm);
+    
+}
 
 
 //TODO: make a SquareGridGame class that all these grid games inherit from.
@@ -639,9 +1353,7 @@ var PoppingBalloons = Class.create(CombinatorialGame, {
 }); //end of PoppingBalloons class
 
 
-
-
-var InteractivePoppingBalloonsView = Class.create({
+var NonInteractivePoppingBalloonsView = Class.create({
     
     /**
      * Constructor.
@@ -662,7 +1374,8 @@ var InteractivePoppingBalloonsView = Class.create({
         var boardSvg = document.createElementNS(svgNS, "svg");
         //now add the new board to the container
         containerElement.appendChild(boardSvg);
-        var boardPixelSize = Math.min(window.innerHeight, window.innerWidth - 200);
+        var boardWidth = Math.min(getAvailableHorizontalPixels(containerElement), window.innerWidth - 200);
+        var boardPixelSize = Math.min(window.innerHeight, boardWidth);
         //var boardPixelSize = 10 + (this.position.sideLength + 4) * 100
         boardSvg.setAttributeNS(null, "width", boardPixelSize);
         boardSvg.setAttributeNS(null, "height", boardPixelSize);
@@ -703,6 +1416,120 @@ var InteractivePoppingBalloonsView = Class.create({
                         this.position.getSingleBalloonOption(colIndex, rowIndex);
                     }
                     boardSvg.appendChild(circle);
+                }
+            }
+        }
+    }
+    
+}); //end of NonInteractivePoppingBalloonsView class.
+
+/**
+ * Non-interactive View Factory for PoppingBalloons
+ */
+var NonInteractivePoppingBalloonsViewFactory = Class.create({
+    /**
+     * Constructor
+     */
+    initialize: function() {
+    }
+
+    /**
+     * Returns an interactive view
+     */
+    ,getNonInteractiveBoard: function(position) {
+        return new NonInteractivePoppingBalloonsView(position);
+    }
+
+    /**
+     * Returns a view.
+     */
+    ,getView: function(position) {
+        return this.getNonInteractiveBoard(position);
+    }
+
+}); //end of InteractivePoppingBalloonsViewFactory
+
+
+
+
+var InteractivePoppingBalloonsView = Class.create({
+    
+    /**
+     * Constructor.
+     */
+    initialize: function(position) {
+        this.position = position;
+    }
+    
+    /**
+     * Draws the board.
+     */
+    ,draw: function(containerElement, listener) {
+        //clear out the other children of the container element
+        while (containerElement.hasChildNodes()) {
+            containerElement.removeChild(containerElement.firstChild);
+        }
+        var svgNS = "http://www.w3.org/2000/svg";
+        var boardSvg = document.createElementNS(svgNS, "svg");
+        //now add the new board to the container
+        containerElement.appendChild(boardSvg);
+        var boardWidth = Math.min(getAvailableHorizontalPixels(containerElement), window.innerWidth - 200);
+        var boardPixelSize = Math.min(window.innerHeight, boardWidth);
+        //var boardPixelSize = 10 + (this.position.sideLength + 4) * 100
+        boardSvg.setAttributeNS(null, "width", boardPixelSize);
+        boardSvg.setAttributeNS(null, "height", boardPixelSize);
+        
+        var width = this.position.getWidth();
+        var height = this.position.getHeight();
+        
+        //get some dimensions based on the canvas size
+        var maxCircleWidth = (boardPixelSize - 10) / width;
+        var maxCircleHeight = (boardPixelSize - 10) / (height + 2);
+        var maxDiameter = Math.min(maxCircleWidth, maxCircleHeight);
+        var padPercentage = .2;
+        var boxSide = maxDiameter;
+        var nodeRadius = Math.floor(.5 * maxDiameter * (1-padPercentage));
+        var nodePadding = Math.floor(maxDiameter * padPercentage);
+        
+        //draw the board
+        for (var colIndex = 0; colIndex < width; colIndex++) {
+            //draw the boxes in this column
+            for (var rowIndex = 0; rowIndex < height; rowIndex ++) {
+                var cx = 5 + Math.floor((colIndex + .5) * boxSide);
+                var cy = 5 + Math.floor((rowIndex + .5) * boxSide);
+                if (this.position.columns[colIndex][rowIndex]) {
+                    //there is a balloon here
+                    var circle = document.createElementNS(svgNS,"circle"); //the balloon
+                    circle.setAttributeNS(null, "cx", cx);
+                    circle.setAttributeNS(null, "cy", cy);
+                    circle.setAttributeNS(null, "r", nodeRadius);
+                    circle.style.stroke = "black";
+                    circle.style.strokeWidth = 1;
+                    circle.style.fill = "red";
+                    if (listener != undefined) {
+                        var player = listener;
+                        circle.popType = "single";
+                        circle.column = colIndex;
+                        circle.row = rowIndex;
+                        circle.onclick = function(event) {player.handleClick(event);}
+                        this.position.getSingleBalloonOption(colIndex, rowIndex);
+                    }
+                    boardSvg.appendChild(circle);
+                    
+                    //code to add the number to the balloon
+                    //adapted from fiveelements' answer at https://stackoverflow.com/questions/57515197/how-to-add-text-inside-a-circle-svg-using-javascript
+                    const balloonIndex = rowIndex * width + colIndex;
+                    const number = document.createElementNS(svgNS, 'text');
+                    number.setAttributeNS(null, 'x', cx);
+                    number.setAttributeNS(null, 'y', cy);
+                    number.setAttributeNS(null, 'text-anchor', 'middle');
+                    number.setAttributeNS(null, 'dominant-baseline', 'central');
+                    number.setAttributeNS(null, 'stroke', 'black');
+                    number.setAttributeNS(null, 'fill', 'black');
+                    number.setAttributeNS(null, 'stroke-width', '1px');
+                    number.textContent = '' + balloonIndex;
+                    boardSvg.appendChild(number);
+                    //console.log("added number");
                     
                     //now check for other nearby balloons
                     if (colIndex + 1 < width && this.position.columns[colIndex+1][rowIndex]) {
@@ -852,6 +1679,537 @@ function newPoppingBalloonsGame() {
     var players = [playerOptions[leftPlayer], playerOptions[rightPlayer]];
     var ref = new Referee(game, players, viewFactory, "MainGameBoard", $('messageBox'), controlForm);
 }
+
+///////////////////////// End of Popping Balloons
+
+
+
+
+///////////////////////////// Flag Coloring ////////////////////////////////
+
+/**
+ * Flag Coloring.
+ * 
+ * Grid is stored as a 2D array of strings.
+ * @author Kyle Burke
+ */
+var FlagColoring = Class.create(CombinatorialGame, {
+   
+    /**
+     * Constructor.
+     */
+    initialize: function(height, width, colorsList) {
+        this.colorsList = colorsList || ["red", "yellow", "green", "blue", "black", "white"];
+        
+        this.playerNames = ["Left", "Right"];
+        
+        this.columns = new Array();
+        for (var colI = 0; colI < width; colI++) {
+            var column = new Array();
+            for (var rowI = 0; rowI < height; rowI++) {
+                column.push(this.colorsList[Math.floor(Math.random() * this.colorsList.length)]);
+            }
+            this.columns.push(column);
+        }
+    }
+    
+    /**
+     * Returns the width of this board.
+     */
+    ,getWidth: function() {
+        return this.columns.length;
+    }
+    
+    /**
+     * Returns the height of this board.
+     */
+    ,getHeight: function() {
+        if (this.getWidth() == 0) {
+            return 0;
+        } else {
+            return this.columns[0].length;
+        }
+    }
+    
+    /**
+     * Equals!
+     */
+    ,equals: function(other) {
+        //check that the dimensions match
+        if (this.getWidth() != other.getWidth() || this.getHeight() != other.getHeight()) {
+            return false;
+        }
+        //now check that all the cells are equal
+        for (var col = 0; col < this.columns.length; col++) {
+            for (var row = 0; row < this.columns[col].length; row++) {
+                if (!this.columns[col][row] == other.columns[col][row]) {
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
+    
+    /**
+     * Clone.
+     */
+    ,clone: function() {
+        var width = this.getWidth();
+        var height = this.getHeight();
+        var other = new FlagColoring(height, width, this.colorsList);
+        for (var col = 0; col < width; col++) {
+            for (var row = 0; row < height; row++) {
+                other.columns[col][row] = this.columns[col][row];
+            }
+        }
+        return other;
+    }
+    
+    /**
+     * Gets two lists, a list of the vertices in the same region as the current vertex and the neighbors of that region.
+     */
+    ,getRegionAndNeighbors: function(column, row) {
+        
+        //unmark all the vertices
+        var marks = [];
+        for (var i = 0; i < this.getWidth(); i++) {
+            var columnMarks = [];
+            for (var j = 0; j < this.getHeight(); j++) {
+                columnMarks.push(false);
+            }
+            marks.push(columnMarks);
+        }
+        
+        //clone the current board (might not need this)
+        var clone = this.clone();
+        
+        //grow the region out from the current vertex
+        var region = [];
+        var neighbors = [];
+        
+        var regionColor = this.columns[column][row];
+        
+        this.getRegionAndNeighborsHelper(column, row, regionColor, marks, region, neighbors);
+        
+        return [region, neighbors];
+    }
+    
+    /**
+     * Helper function for getRegionAndNeighbors.  This is void, instead modifying marks, region, and neighbors.
+     */
+    ,getRegionAndNeighborsHelper: function(column, row, regionColor, marks, region, neighbors) {
+        if (marks[column][row]) {
+            return;
+        }
+        marks[column][row] = true;
+        
+        //check whether we're in the same region
+        if (regionColor == this.columns[column][row]) {
+            //yes!  Add and keep expanding
+            region.push([column, row]);
+        
+            //check the four adjacent vertices to keep expanding
+            //first to the left
+            var nextCol = column - 1;
+            var nextRow = row;
+            if (nextCol >= 0) {
+                this.getRegionAndNeighborsHelper(nextCol, nextRow, regionColor, marks, region, neighbors);
+            }
+            
+            //next above
+            nextCol = column;
+            nextRow = row-1;
+            if (nextRow >= 0) {
+                this.getRegionAndNeighborsHelper(nextCol, nextRow, regionColor, marks, region, neighbors);
+            }
+            
+            //next right
+            nextCol = column + 1;
+            nextRow = row;
+            if (nextCol <= this.getWidth() - 1) {
+                this.getRegionAndNeighborsHelper(nextCol, nextRow, regionColor, marks, region, neighbors);
+            }
+            
+            //next below
+            nextCol = column;
+            nextRow = row + 1;
+            if (nextRow <= this.getHeight() - 1) {
+                this.getRegionAndNeighborsHelper(nextCol, nextRow, regionColor, marks, region, neighbors);
+            }
+            
+        } else {
+            //we're just a neighbor
+            neighbors.push([column, row]);
+        }
+        
+    }
+    
+    /**
+     * Gets the options.
+     */
+    ,getOptionsForPlayer: function(playerId) {
+        var options = new Array();
+        var width = this.getWidth();
+        var height = this.getHeight();
+        
+        //check which vertices we've already seen using an array of booleans
+        var inRegionAlreadySeen = [];
+        for (var col = 0; col < width; col++) {
+            var inRegionAlreadySeenColumn = [];
+            for (var row = 0; row < height; row++) {
+                inRegionAlreadySeenColumn.push(false);
+            }
+            inRegionAlreadySeen.push(inRegionAlreadySeenColumn);
+        }
+        
+        //traverse all vertices and add the options there if we haven't yet
+        for (var col = 0; col < width; col++) {
+            for (var row = 0; row < height; row++) {
+                if (!inRegionAlreadySeen[col][row]) {
+                    var regionAndNeighbors = this.getRegionAndNeighbors(col, row);
+                    var region = regionAndNeighbors[0];
+                    var neighbors = regionAndNeighbors[1];
+                    //get all the neighboring colors
+                    var neighborColors = [];
+                    for (var i = 0; i < neighbors.length; i++) {
+                        var neighbor = neighbors[i];
+                        var neighborColor = this.columns[neighbor[0]][neighbor[1]];
+                        var hasColor = false;
+                        for (var j = 0; j < neighborColors.length; j++) {
+                            if (neighborColors[j] == neighborColor) {
+                                hasColor = true;
+                                break;
+                            }
+                        }
+                        if (!hasColor) {
+                            neighborColors.push(neighborColor);
+                        }
+                    }
+                    
+                    //add moves to each color
+                    for (var i = 0; i < neighborColors.length; i++) {
+                        var option = this.colorRegion(region, neighborColors[i]);
+                        options.push(option);
+                    }
+                    
+                    //mark all vertices in the region as already seen
+                    for (var i = 0; i < region.length; i++) {
+                        var vertex = region[i];
+                        inRegionAlreadySeen[vertex[0]][vertex[1]]  = true;
+                    }
+                }
+            }
+        }
+        return options;
+    }
+    
+    /**
+     * Gets a new position where the given region (list of coordinates) is colored.
+     */
+    ,colorRegion: function(region, color) {
+        var clone = this.clone();
+        for (var i = 0; i < region.length; i++) {
+            var vertex = region[i];
+            clone.columns[vertex[0]][vertex[1]] = color;
+        }
+        return clone;
+    }
+    
+}); //end of FlagColoring class
+
+
+var NonInteractiveFlagColoringView = Class.create({
+    
+    /**
+     * Constructor.
+     */
+    initialize: function(position) {
+        this.position = position;
+    }
+    
+    /**
+     * Draws the board.
+     */
+    ,draw: function(containerElement, listener) {
+        //clear out the other children of the container element
+        while (containerElement.hasChildNodes()) {
+            containerElement.removeChild(containerElement.firstChild);
+        }
+        var svgNS = "http://www.w3.org/2000/svg";
+        var boardSvg = document.createElementNS(svgNS, "svg");
+        //now add the new board to the container
+        containerElement.appendChild(boardSvg);
+        var boardWidth = Math.min(getAvailableHorizontalPixels(containerElement), window.innerWidth - 200);
+        var boardPixelSize = Math.min(window.innerHeight, boardWidth);
+        //var boardPixelSize = 10 + (this.position.sideLength + 4) * 100
+        boardSvg.setAttributeNS(null, "width", boardPixelSize);
+        boardSvg.setAttributeNS(null, "height", boardPixelSize);
+        
+        var width = this.position.getWidth();
+        var height = this.position.getHeight();
+        
+        //get some dimensions based on the canvas size
+        var maxCircleWidth = (boardPixelSize - 10) / width;
+        var maxCircleHeight = (boardPixelSize - 10) / (height + 2);
+        var maxDiameter = Math.min(maxCircleWidth, maxCircleHeight);
+        var padPercentage = .2;
+        var boxSide = maxDiameter;
+        var nodeRadius = Math.floor(.5 * maxDiameter * (1-padPercentage));
+        var nodePadding = Math.floor(maxDiameter * padPercentage);
+        
+        //draw the board
+        for (var colIndex = 0; colIndex < width; colIndex++) {
+            //draw the vertices in this column
+            for (var rowIndex = 0; rowIndex < height; rowIndex ++) {
+                var cx = 5 + Math.floor((colIndex + .5) * boxSide);
+                var cy = 5 + Math.floor((rowIndex + .5) * boxSide);
+                var circle = document.createElementNS(svgNS,"circle"); //the balloon
+                circle.setAttributeNS(null, "cx", cx);
+                circle.setAttributeNS(null, "cy", cy);
+                circle.setAttributeNS(null, "r", nodeRadius);
+                circle.style.stroke = "black";
+                circle.style.strokeWidth = 1;
+                circle.style.fill = this.position.columns[colIndex][rowIndex]; //value is the color
+                if (listener != undefined) {
+                    var player = listener;
+                    circle.popType = "single";
+                    circle.column = colIndex;
+                    circle.row = rowIndex;
+                    circle.onclick = function(event) {player.handleClick(event);}
+                    this.position.getSingleBalloonOption(colIndex, rowIndex);
+                }
+                boardSvg.appendChild(circle);
+            }
+        }
+    }
+    
+}); //end of NonInteractiveFlagColoringView class.
+
+/**
+ * Non-interactive View Factory for FlagColoring
+ */
+var NonInteractiveFlagColoringViewFactory = Class.create({
+    /**
+     * Constructor
+     */
+    initialize: function() {
+    }
+
+    /**
+     * Returns an interactive view
+     */
+    ,getNonInteractiveBoard: function(position) {
+        return new NonInteractiveFlagColoringView(position);
+    }
+
+    /**
+     * Returns a view.
+     */
+    ,getView: function(position) {
+        return this.getNonInteractiveBoard(position);
+    }
+
+}); //end of InteractiveFlagColoringViewFactory
+
+
+
+
+var InteractiveFlagColoringView = Class.create({
+    
+    /**
+     * Constructor.
+     */
+    initialize: function(position) {
+        this.position = position;
+    }
+    
+    /**
+     * Draws the board.
+     */
+    ,draw: function(containerElement, listener) {
+        //clear out the other children of the container element
+        while (containerElement.hasChildNodes()) {
+            containerElement.removeChild(containerElement.firstChild);
+        }
+        var svgNS = "http://www.w3.org/2000/svg";
+        var boardSvg = document.createElementNS(svgNS, "svg");
+        //now add the new board to the container
+        containerElement.appendChild(boardSvg);
+        var boardWidth = Math.min(getAvailableHorizontalPixels(containerElement), window.innerWidth - 200);
+        var boardPixelSize = Math.min(window.innerHeight, boardWidth);
+        //var boardPixelSize = 10 + (this.position.sideLength + 4) * 100
+        boardSvg.setAttributeNS(null, "width", boardPixelSize);
+        boardSvg.setAttributeNS(null, "height", boardPixelSize);
+        
+        var width = this.position.getWidth();
+        var height = this.position.getHeight();
+        
+        //get some dimensions based on the canvas size
+        var maxCircleWidth = (boardPixelSize - 10) / width;
+        var maxCircleHeight = (boardPixelSize - 10) / (height + 2);
+        var maxDiameter = Math.min(maxCircleWidth, maxCircleHeight);
+        var padPercentage = .2;
+        var boxSide = maxDiameter;
+        var nodeRadius = Math.floor(.5 * maxDiameter * (1-padPercentage));
+        var nodePadding = Math.floor(maxDiameter * padPercentage);
+        
+        //draw a gray frame around everything
+        var frame = document.createElementNS(svgNS, "rect");
+        frame.setAttributeNS(null, "x", 5);
+        frame.setAttributeNS(null, "y", 5);
+        frame.setAttributeNS(null, "width", width * boxSide);
+        frame.setAttributeNS(null, "height", height * boxSide);
+        frame.style.strokeWidth = 4;
+        frame.style.stroke = "gray";
+        boardSvg.appendChild(frame);
+        
+        //draw the board
+        for (var colIndex = 0; colIndex < width; colIndex++) {
+            //draw the boxes in this column
+            for (var rowIndex = 0; rowIndex < height; rowIndex ++) {
+                
+                var square = document.createElementNS(svgNS, "rect");
+                var x = 5 + Math.floor((colIndex) * boxSide);
+                var y = 5 + Math.floor((rowIndex) * boxSide);
+                square.setAttributeNS(null, "x", x);
+                square.setAttributeNS(null, "y", y);
+                square.setAttributeNS(null, "width", boxSide+1);
+                square.setAttributeNS(null, "height", boxSide+1);
+                //square.style.stroke = "black";
+                square.style.strokeWith = 0;
+                square.style.fill = this.position.columns[colIndex][rowIndex];
+                if (listener != undefined) {
+                    var player = listener;
+                    square.popType = "single";
+                    square.column = colIndex;
+                    square.row = rowIndex;
+                    square.onclick = function(event) {player.handleClick(event);}
+                }
+                boardSvg.appendChild(square);
+            }
+        }
+    }
+
+    /**
+     * Handles the mouse click.
+     */
+    ,getNextPositionFromClick: function(event, currentPlayer, containerElement, player) {
+        this.destroyPopup();
+        console.log("Clicked!");
+        var self = this;
+        var circle = event.target;
+        var column = event.target.column;
+        var row = event.target.row;
+        
+        //get the list of colors (as neighborColors)
+        
+        var regionAndNeighbors = this.position.getRegionAndNeighbors(column, row);
+        var region = regionAndNeighbors[0];
+        var neighbors = regionAndNeighbors[1];
+        //get all the neighboring colors
+        var neighborColors = [];
+        for (var i = 0; i < neighbors.length; i++) {
+            var neighbor = neighbors[i];
+            var neighborColor = this.position.columns[neighbor[0]][neighbor[1]];
+            var hasColor = false;
+            for (var j = 0; j < neighborColors.length; j++) {
+                if (neighborColors[j] == neighborColor) {
+                    hasColor = true;
+                    break;
+                }
+            }
+            if (!hasColor) {
+                neighborColors.push(neighborColor);
+            }
+        }
+        
+        //console.log("neighborColors: " + neighborColors);
+        
+        
+        //create the popup
+        this.popup = document.createElement("div");
+        for (var i = 0; i < neighborColors.length; i++) {
+            var color = neighborColors[i];
+            //console.log("color: " + color);
+            var button = document.createElement("button");
+            button.appendChild(toNode(color));
+            const colorX = color;
+            button.onclick = function() {
+                self.destroyPopup();
+                player.sendMoveToRef(self.position.colorRegion(region, colorX));
+            }
+            this.popup.appendChild(button);
+        }
+
+        this.popup.style.position = "fixed";
+        this.popup.style.display = "block";
+        this.popup.style.opacity = 1;
+        this.popup.width = Math.min(window.innerWidth/2, 100);
+        this.popup.height = Math.min(window.innerHeight/2, 50);
+        this.popup.style.left = event.clientX + "px";
+        this.popup.style.top = event.clientY + "px";
+        document.body.appendChild(this.popup);
+        return null;
+    }
+
+    /**
+     * Destroys the popup color window.
+     */
+    ,destroyPopup: function() {
+        if (this.popup != null) {
+            this.popup.parentNode.removeChild(this.popup);
+            this.selectedElement = undefined;
+            this.popup = null;
+        }
+    }
+    
+}); //end of InteractiveFlagColoringView class
+
+/**
+ * View Factory for FlagColoring
+ */
+var InteractiveFlagColoringViewFactory = Class.create({
+    /**
+     * Constructor
+     */
+    initialize: function() {
+    }
+
+    /**
+     * Returns an interactive view
+     */
+    ,getInteractiveBoard: function(position) {
+        return new InteractiveFlagColoringView(position);
+    }
+
+    /**
+     * Returns a view.
+     */
+    ,getView: function(position) {
+        return this.getInteractiveBoard(position);
+    }
+
+}); //end of InteractiveFlagColoringViewFactory
+
+/**
+ * Launches a new FlagColoring game.
+ */
+function newFlagColoringGame() {
+    var viewFactory = new InteractiveFlagColoringViewFactory();
+    var playDelay = 1000;
+    var playerOptions = getCommonPlayerOptions(viewFactory, playDelay, 1, 5);
+    var width = parseInt($('boardWidth').value);
+    var height = parseInt($('boardHeight').value);
+    var controlForm = $('gameOptions');
+    var leftPlayer = parseInt(getSelectedRadioValue(controlForm.elements['leftPlayer']));
+    var rightPlayer =  parseInt(getSelectedRadioValue(controlForm.elements['rightPlayer']));
+    var game = new FlagColoring(height, width);
+    var players = [playerOptions[leftPlayer], playerOptions[rightPlayer]];
+    var ref = new Referee(game, players, viewFactory, "MainGameBoard", $('messageBox'), controlForm);
+}
+
+///////////////////////// End of Flag Coloring
+
 
 
 
@@ -1116,20 +2474,20 @@ var InteractiveQuantumNimView = Class.create({
         var boardSvg = document.createElementNS(svgNS, "svg");
         //now add the new board to the container
         containerElement.appendChild(boardSvg);
-        var boardPixelSize = Math.min(window.innerHeight, window.innerWidth - 200);
+        var boardPixelSize = Math.min(window.innerHeight - 100, window.innerWidth - 200);
         //var boardPixelSize = 10 + (this.position.sideLength + 4) * 100
         boardSvg.setAttributeNS(null, "width", boardPixelSize);
         //boardSvg.setAttributeNS(null, "height", boardPixelSize);
         
         var width = this.position.getWidth();
-        var height = this.position.getHeight();
+        var height = this.position.getHeight(); //plus 1 for the triangles
         
         //get some dimensions based on the canvas size
         var maxBoxWidth = (boardPixelSize - 10) / width;
         //the boxes get too small as the board increases in height, so we're not doing this here.
-        //var maxBoxHeight = (boardPixelSize - 10) / (height + 2);
+        var maxBoxHeight = (boardPixelSize - 10) / (height + 2);
         //var maxBoxSide = Math.min(maxBoxWidth, maxBoxHeight);
-        var maxBoxSide = Math.min(maxBoxWidth, 200);
+        var maxBoxSide = Math.min(maxBoxWidth, maxBoxHeight, 200);
         var boardHeight = maxBoxSide * (height + 2) + 10;
         boardSvg.setAttributeNS(null, "height", boardHeight);
         
@@ -2389,14 +3747,8 @@ var InteractiveAtroposViewFactory = Class.create({
 
 //end of Atropos stuff!
 
-//Start of Distance Games stuff!
-//TODO: move the Distance Games stuff down here.
 
 
-
-
-
-//end of Distance Games stuff
 
 function getCommonPlayerOptions(viewFactory, delay, lowAIDifficulty, highAIDifficulty) {
     var highAI = highAIDifficulty || 7;
@@ -2667,6 +4019,7 @@ var ButtonsAndScissors = Class.create(CombinatorialGame, {
         return options;
     }
 }); //end of ButtonsAndScissors
+ButtonsAndScissors.prototype.PLAYER_NAMES = ["Blue", "Red"];
 
 var InteractiveButtonsAndScissorsView = Class.create({
 
@@ -3012,7 +4365,8 @@ var ConnectFour = Class.create(CombinatorialGame, {
         return -1;
     }
 
-});
+}); //end of ConnectFour class
+ConnectFour.prototype.PLAYER_NAMES = ["Yellow", "Red"];
 
 
 var InteractiveSVGConnectFourView = Class.create({
@@ -3340,6 +4694,7 @@ var Clobber = Class.create(CombinatorialGame, {
         return string;
     }
 }); //end of Clobber
+Clobber.prototype.PLAYER_NAMES = ["Blue", "Red"];
 
 var ReverseClobber = Class.create(Clobber, {
 
@@ -3477,6 +4832,7 @@ var Clobbineering = Class.create(CombinatorialGame, {
     }
 
 }); //end of Clobbineering
+Clobbineering.prototype.PLAYER_NAMES = ["Blue/Vertical", "Red/Horizontal"];
 
 
 var InteractiveSVGClobbineeringView = Class.create({
@@ -3896,10 +5252,12 @@ var Domineering = Class.create(CombinatorialGame, {
 
 
 }); //end of Domineering class
+Domineering.prototype.PLAYER_NAMES = ["Vertical", "Horizontal"];
 
 
 /**
  * Class for Manalath
+ * @author: Christina Shatney.
  */
 var Manalath = Class.create(CombinatorialGame, {
 
@@ -4321,6 +5679,7 @@ var Manalath = Class.create(CombinatorialGame, {
 Manalath.prototype.BLUE = 0;
 Manalath.prototype.RED = 1;
 Manalath.prototype.UNCOLORED = 2;
+Manalath.prototype.PLAYER_NAMES = ["Blue", "Red"];
 
 
 
@@ -4911,6 +6270,7 @@ var NoCanDo = Class.create(CombinatorialGame, {
 
 
 }); //end of NoCanDo class
+NoCanDo.prototype.PLAYER_NAMES = ["Vertical", "Horizontal"];
 
 
 var InteractiveSVGDomineeringView = Class.create({
@@ -5461,33 +6821,50 @@ var InteractiveClobberViewFactory = Class.create({
 /**
  * Controller for game play.
  * TODO: change viewElementId to viewElement
+ * autoStart is a boolean for whether the referee should start running at creation.
+ * alertWhenDone is a list of objects that want to know when this is done.  All those objects should have a gameIsOver(Referee) method.
  */
 var Referee = Class.create({
-    initialize: function(position, players, viewFactory, viewElementId, messageContainer, optionsPanel) {
+    initialize: function(position, players, viewFactory, viewElementId, messageContainerOrId, optionsPanel, autoStart, alertWhenDone) {
+        this.isComplete = false;
         this.viewFactory = viewFactory;
         this.position = position;
         this.players = players; //TODO: clone players?
-        viewElementId = viewElementId || "gameBoard";
-        this.viewElement = document.getElementById(viewElementId);
+        this.viewElementId = viewElementId || "gameBoard";
+        //this.viewElement = document.getElementById(viewElementId);
         this.currentPlayer = CombinatorialGame.prototype.LEFT;
-        this.messageContainer = messageContainer || document.createElement("p");
+        if (typeof messageContainerOrId === 'string') {
+            this.messageContainerId = messageContainerOrId;
+        } else {
+            try {
+                this.messageContainerId = messageContainerOrId.id;
+            } catch (error) {
+                //okay, let's just set it equal to a terrible string that won't be an id.
+                this.messageContainerId = "mustardMcMonkey";
+            }
+        }
+        //this.messageContainer = messageContainer || document.createElement("p");
         this.optionsPanel = optionsPanel || document.createElement("p");
+        if (autoStart === undefined) {
+            autoStart = true;
+        }
+        this.alertWhenDone = alertWhenDone || [];
 
         this.setOptionsAbleness(false);
         this.setStringMessage(this.position.playerNames[this.currentPlayer] + " goes first.");
         this.view = this.viewFactory.getView(this.position);
         if (!this.players[this.currentPlayer].hasView()) {
-            this.view.draw(this.viewElement);
+            this.view.draw(this.getViewContainer());
         }
-        console.log("In ref!");
-        console.log("  this.position: " + this.position);
-        this.requestNextMove();
+        //console.log("In ref!");
+        //console.log("  this.position: " + this.position);
+        if (autoStart) this.requestNextMove();
     }
 
-    ,/**
+    /**
      * Determines whether the options will be enabled.
      */
-    setOptionsAbleness: function(areEnabled) {
+    ,setOptionsAbleness: function(areEnabled) {
         var areDisabled = !areEnabled;
         var descendants = Element.descendants(this.optionsPanel);
         for (var i = 0; i < descendants.length; i++) {
@@ -5499,34 +6876,39 @@ var Referee = Class.create({
      * Sets the message to players.
      */
     setStringMessage: function(message) {
-        this.messageContainer.innerHTML = message;
+        var messageContainer = $(this.messageContainerId);
+        if (messageContainer != undefined) {
+            messageContainer.innerHTML = message;
+        }
     }
 
     ,/**
      * Gets the element that contains the view for this.
      */
     getViewContainer: function() {
-        return this.viewElement;
+        return $(this.viewElementId);
     }
 
-    ,/**
+    /**
      * Sets fields.
      */
-    moveTo: function(option) {
-        if (option == undefined) {
-            console.log("option is undefined in Referee.moveTo.  WTJ?!?!?!?!?");
+    ,moveTo: function(option) {
+        if (option == undefined || option == null) {
+            console.log("option is undefined or null in Referee.moveTo(option)");
+            console.log("We're counting that as a forfeit!");
+            this.endGame();
         }
         if (this.position.hasOption(this.currentPlayer, option)) {
+            //the move is legal.  Make it.
             this.position = option;
             this.currentPlayer = 1 - this.currentPlayer;
             if (!this.players[this.currentPlayer].hasView()) {
                 this.view = this.viewFactory.getView(this.position);
-                this.view.draw(this.viewElement);
+                this.view.draw(this.getViewContainer());
             }
 
             if (this.position.getOptionsForPlayer(this.currentPlayer).length == 0) {
-                this.setStringMessage("There are no moves for " + this.position.playerNames[this.currentPlayer] + ".  " + this.position.playerNames[1-this.currentPlayer] + " wins!");
-                this.setOptionsAbleness(true);
+                this.endGame();
             } else {
                 //TODO: globals for debugging!
                 /*
@@ -5535,22 +6917,37 @@ var Referee = Class.create({
                 moves = this.position.getOptionsForPlayer(this.currentPlayer);
                 */
                 this.setStringMessage("It's " + this.position.playerNames[this.currentPlayer] + "'s turn.");
+                this.requestNextMove();
             }
-            this.requestNextMove();
+            //this.requestNextMove();
         } else {
             if (option != null) {
-                console.log("Tried to move to a non-option, stored in global debugVar");
+                console.log("Tried to move to a non-option!  Parent stored in debugPar; bad option stored in debugVar.");
                 console.log("  From: " + this.position);
                 console.log("  To: " + option);
                 debugVar = option;
+                debugPar = this.position;
             }
         }
     }
+    
+    /**
+     * Ends the game.
+     */
+    ,endGame: function() {
+        this.isComplete = true;
+        this.view = this.viewFactory.getView(this.position);
+        this.view.draw(this.getViewContainer());
+        //console.log("Game over!");
+        this.setStringMessage("There are no moves for " + this.position.playerNames[this.currentPlayer] + ".  " + this.position.playerNames[1-this.currentPlayer] + " wins!");
+        this.setOptionsAbleness(true);
+        this.alertGameOver();
+    }
 
-    ,/**
+    /**
      * Requests the next move.
      */
-    requestNextMove: function() {
+    ,requestNextMove: function() {
         var self = this;
         //perform a delayed call so that the display will redraw
         window.setTimeout(function() {self.requestNextMoveHelper();}, 20);
@@ -5560,9 +6957,37 @@ var Referee = Class.create({
      * Helper for requestNextMove
      */
     ,requestNextMoveHelper: function() {
-        console.log("this: " + this);
-        console.log("this.position: " + this.position);
+        //console.log("this: " + this);
+        //console.log("this.position: " + this.position);
         this.players[this.currentPlayer].givePosition(this.currentPlayer, this.position, this);
+    }
+    
+    /**
+     * Returns whether this game is over.
+     */
+    ,isDone: function() {
+        return this.isComplete;
+        //return this.position.getOptionsForPlayer(this.currentPlayer).length == 0;
+    }
+    
+    /**
+     *  Lets the relevant objects know that the game is over.
+     */
+    ,alertGameOver: function() {
+        for (var i = 0; i < this.alertWhenDone.length; i++) {
+            this.alertWhenDone[i].gameIsOver(this);
+        }
+    }
+    
+    /**
+     * Returns the winner.
+     */
+    ,getWinnerIndex: function() {
+        if (! this.isDone()) {
+            console.log("Asked for the winner before the game is done!!!!");
+        } else {
+            return 1 - this.currentPlayer;
+        }
     }
 }); //end of Referee
 
@@ -5615,7 +7040,7 @@ var HumanPlayer = Class.create({
      * Sends a move to the Referee.  Confirms that option is a legal move.
      */
     ,sendMoveToRef: function(option) {
-        if (option == null || option == undefined) {
+        if (option == null || option == undefined || option === undefined) {
             return;
         } else if (this.position.hasOption(this.playerIndex, option)) {
             this.referee.moveTo(option);
@@ -5839,6 +7264,7 @@ var LosingMoveAndResults = Class.create(BestMoveAndResults, {
     }
 });
 
+
 var UndecidedMoveAndResults = Class.create(BestMoveAndResults, {
    winnability: function() {
        return RESULT_DUNNO;
@@ -5850,6 +7276,7 @@ var UndecidedMoveAndResults = Class.create(BestMoveAndResults, {
    
    ,addToDunno: function(other) {
        if (this.depth == other.depth) {
+           //same depth, so use both
            return new UndecidedMoveAndResults(this.moves.concat(other.moves), this.depth);
        } else {
            if (Math.random() > .5) {
@@ -5867,6 +7294,7 @@ var UndecidedMoveAndResults = Class.create(BestMoveAndResults, {
 });
 
 
+//represents a BestMoveAndResults with no options
 var NullBestMoveAndResults = Class.create(LosingMoveAndResults, {
     
    /**
@@ -5909,13 +7337,14 @@ var DepthSearchPlayer = Class.create(ComputerPlayer, {
     ,givePosition: function(playerIndex, position, referee) {
         var bestMoves = this.getBestMovesFrom(playerIndex, position, this.maxDepth);
         //console.log("Looking for a move from: " + position);
+        /*
         if (bestMoves.winnability() == RESULT_WIN) {
             console.log("AI is feeling real good.");
         } else if (bestMoves.winnability() == RESULT_DUNNO) {
             console.log("AI doesn't know how to feel.  Depth: " + bestMoves.getDepth());
         } else {
             console.log("AI doesn't feel too good about this.  Death likely in " + bestMoves.getDepth() + " moves.");
-        }
+        }*/
         var option = bestMoves.getMove();
         window.setTimeout(function(){referee.moveTo(option);}, this.delayMilliseconds);
     }
@@ -5930,6 +7359,8 @@ var DepthSearchPlayer = Class.create(ComputerPlayer, {
         var options = position.getOptionsForPlayer(playerIndex);
         var bestOptions = new NullBestMoveAndResults();
         if (options.length == 0) {
+            //console.log("Asked to get the best move from position monkey with no options.");
+            //monkeyPosition = position;
             return bestOptions;
         }
         if (depth <= 1) {
@@ -6051,8 +7482,11 @@ function getRadioPlayerOptions(playerId) {
 /**
  * Gets an HTML Element for 1-d board sizes.
  */
-function createBasicOneDimensionalSizeOptions(minSize, maxSize, defaultSize) {
+function createBasicOneDimensionalSizeOptions(minSize, maxSize, defaultSize, ruleset) {
     defaultSize = defaultSize || (minSize + maxSize) / 2;
+    ruleset = ruleset || CombinatorialGame;
+    var leftName = ruleset.prototype.PLAYER_NAMES[0];
+    var rightName = ruleset.prototype.PLAYER_NAMES[1];
 
     var container = document.createElement("div");
 
@@ -6062,19 +7496,20 @@ function createBasicOneDimensionalSizeOptions(minSize, maxSize, defaultSize) {
 
     //duplicated code from createBasicGridGameOptions
     var leftPlayerElement = document.createDocumentFragment();
-    leftPlayerElement.appendChild(document.createTextNode("(Blue plays first.)"));
+    leftPlayerElement.appendChild(document.createTextNode("(" + leftName + " plays first.)"));
     leftPlayerElement.appendChild(document.createElement("br"));
     var leftRadio = getRadioPlayerOptions(CombinatorialGame.prototype.LEFT);
     leftPlayerElement.appendChild(leftRadio);
-    container.appendChild(createGameOptionDiv("Blue:", leftPlayerElement));
+    container.appendChild(createGameOptionDiv(leftName + ":", leftPlayerElement));
 
     var rightRadio = getRadioPlayerOptions(CombinatorialGame.prototype.RIGHT);
-    container.appendChild(createGameOptionDiv("Red:", rightRadio));
+    container.appendChild(createGameOptionDiv(rightName + ":", rightRadio));
 
     var startButton = document.createElement("input");
     startButton.type = "button";
     startButton.id = "starter";
     startButton.value = "Start Game";
+    startButton.style.fontSize = "large";
     startButton.onclick = newGame;
     container.appendChild(startButton);
     //end duplicated code.
@@ -6085,11 +7520,15 @@ function createBasicOneDimensionalSizeOptions(minSize, maxSize, defaultSize) {
 /**
  * Gets an HTML Element containing the basic game options for a 2-dimensional grid.
  */
-function createBasicGridGameOptions(minWidth, maxWidth, defaultWidth, minHeight, maxHeight, defaultHeight) {
+function createBasicGridGameOptions(minWidth, maxWidth, defaultWidth, minHeight, maxHeight, defaultHeight, ruleset) {
     //do some normalization for games with only one size parameter (e.g. Atropos)
     minHeight = minHeight || minWidth;
     maxHeight = maxHeight || maxWidth;
     defaultHeight = defaultHeight || defaultWidth;
+    
+    ruleset = ruleset || CombinatorialGame;
+    var leftName = ruleset.prototype.PLAYER_NAMES[0];
+    var rightName = ruleset.prototype.PLAYER_NAMES[1];
 
     var container = document.createElement("div");
 
@@ -6102,19 +7541,20 @@ function createBasicGridGameOptions(minWidth, maxWidth, defaultWidth, minHeight,
     container.appendChild(createGameOptionDiv("Height", heightRange));
 
     var leftPlayerElement = document.createDocumentFragment();
-    leftPlayerElement.appendChild(document.createTextNode("(Blue plays first.)"));
+    leftPlayerElement.appendChild(document.createTextNode("("+leftName+ " plays first.)"));
     leftPlayerElement.appendChild(document.createElement("br"));
     var leftRadio = getRadioPlayerOptions(CombinatorialGame.prototype.LEFT);
     leftPlayerElement.appendChild(leftRadio);
-    container.appendChild(createGameOptionDiv("Blue:", leftPlayerElement));
+    container.appendChild(createGameOptionDiv(leftName + ":", leftPlayerElement));
 
     var rightRadio = getRadioPlayerOptions(CombinatorialGame.prototype.RIGHT);
-    container.appendChild(createGameOptionDiv("Red:", rightRadio));
+    container.appendChild(createGameOptionDiv(rightName + ":", rightRadio));
 
     var startButton = document.createElement("input");
     startButton.type = "button";
     startButton.id = "starter";
     startButton.value = "Start Game";
+    startButton.style.fontSize = "large";
     startButton.onclick = newGame;
     container.appendChild(startButton);
 

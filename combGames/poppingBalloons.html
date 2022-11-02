@@ -2,21 +2,20 @@
 <html>
   <head>
     <meta charset = "utf-8">
-    <title>Clobber</title>
+    <title>Popping Balloons</title>
     <link rel = "stylesheet" type = "text/css" href = "cgtStyle.css" />
     <script src = "../prototype.js" type = "text/javascript"></script>
     <script src = "../paithanLibraries2013.js" type = "text/javascript"></script>
     <script src = "combinatorialGames.js" type = "text/javascript"></script>
     <script>
-      var rulesText = "On your turn, choose one of your pieces to clobber an opponent's adjacent (4 cardinal directions) piece.  Then click on the piece you want to clobber.  Your piece will move and replace theirs.  If you can't make a move on your turn, you lose.";
+      var rulesText = "On your turn, choose to pop either one balloon (red circle), two neighboring balloons (blue square) or all balloons in a square (yellow square).";
       function newGame() {
-        var isReverse = false;
-        newClobberGame(isReverse);
+        newPoppingBalloonsGame();
       }
     </script>
   </head>
   <body>
-    <h1>Clobber!</h1>
+    <h1>Popping Balloons</h1>
     <h2 id = "messageBox">Choose your Game</h2>
     <div id = "gameControls">
         <div class = "gameOption centered">
@@ -27,13 +26,19 @@
         <form id = "gameOptions" accept-charset="utf-8">
         </form>
         <script>
-            var gameOptionsForm = createBasicGridGameOptions(3, 6, 4, 3, 5, 4);
+            var minWidth = 3;
+            var maxWidth = 10;
+            var defaultWidth = 5;
+            var minHeight = 3;
+            var maxHeight = 10;
+            var defaultHeight = 5;
+            var gameOptionsForm = createBasicGridGameOptions(minWidth, maxWidth, defaultWidth, minHeight, maxHeight, defaultHeight);
             $('gameOptions').appendChild(gameOptionsForm);
             $('rulesButton').onclick = showRules;
             $("starter").style.width = ($("gameControls").clientWidth ) + "px";
         </script>
     </div>
-    <div class = "gameBoard" id = "clobberBoard"></div>
+    <div class = "gameBoard" id = "MainGameBoard"></div>
     
     <p style = "clear:both; padding: 5px;">Check out <a href = "index.html">other combinatorial games</a>.</p>
   </body>

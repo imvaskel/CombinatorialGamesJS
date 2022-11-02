@@ -2,7 +2,7 @@
 <html>
   <head>
     <meta charset = "utf-8">
-    <title>NoCanDo</title>
+    <title>No Can Do</title>
     <link rel = "stylesheet" type = "text/css" href = "cgtStyle.css" />
     <script src = "../prototype.js" type = "text/javascript"></script>
     <script src = "../paithanLibraries2013.js" type = "text/javascript"></script>
@@ -15,7 +15,7 @@
     </script>
   </head>
   <body>
-    <h1>NoCanDo!</h1>
+    <h1>No Can Do!</h1>
     <h2 id = "messageBox">Choose your Game</h2>
     <div id = "gameControls">
         <div class = "gameOption centered">
@@ -26,13 +26,16 @@
         <form id = "gameOptions" accept-charset="utf-8">
         </form>
         <script>
-            var gameOptionsForm = createBasicGridGameOptionsForNoCanDo(4, 9, 7, 4, 9, 7);
+            //var gameOptionsForm = createBasicGridGameOptionsForNoCanDo(4, 9, 7, 4, 9, 7);
+            var gameOptionsForm = createBasicGridGameOptions(4, 9, 7, 4, 9, 7, NoCanDo);
             $('gameOptions').appendChild(gameOptionsForm);
             $('rulesButton').onclick = showRules;
             $("starter").style.width = ($("gameControls").clientWidth ) + "px";
         </script>
     </div>
     <div class = "gameBoard" id = "gameCanvas"></div>
+    
+    <p style = "clear:both; padding: 5px;">Check out <a href = "index.html">other combinatorial games</a>.</p>
   </body>
 
 </html>
