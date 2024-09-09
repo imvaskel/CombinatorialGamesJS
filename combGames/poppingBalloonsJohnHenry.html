@@ -4,6 +4,7 @@
     <meta charset = "utf-8">
     <title>Popping Balloons</title>
     <link rel = "stylesheet" type = "text/css" href = "cgtStyle.css" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/seedrandom/3.0.5/seedrandom.min.js"></script>
     <script src = "../prototype.js" type = "text/javascript"></script>
     <script src = "../paithanLibraries2013.js" type = "text/javascript"></script>
     <script src = "combinatorialGames.js" type = "text/javascript"></script>
@@ -67,8 +68,8 @@
         }
         return createRadioGroup(playerName + "Player",  ["NinePiecesOrLess"], defaultIndex); // "Professional (hangs your browser)"
     }
-    
-    
+
+
     function newPoppingBalloonsJohnHenryGame() {
         var viewFactory = new InteractivePoppingBalloonsViewFactory();
         var playDelay = 1000;

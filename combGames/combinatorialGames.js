@@ -101,7 +101,7 @@ var NoGo = Class.create(CombinatorialGame, {
         }
         this.playerNames = ["Black", "White"];
     }
-    
+
     /**
      * Clones the columns.
      */
@@ -116,21 +116,21 @@ var NoGo = Class.create(CombinatorialGame, {
         }
         return columnsClone;
     }
-    
+
     /**
      * Clones this.
      */
     ,clone: function() {
         return new NoGo(this.columns);
     }
-    
+
     /**
      * Returns the width of this board.
      */
     ,getWidth: function() {
         return this.columns.length;
     }
-    
+
     /**
      * Returns the height of this board.
      */
@@ -141,7 +141,7 @@ var NoGo = Class.create(CombinatorialGame, {
             return this.columns[0].length;
         }
     }
-    
+
     /**
      * Equals!
      */
@@ -160,7 +160,7 @@ var NoGo = Class.create(CombinatorialGame, {
         }
         return true;
     }
-    
+
     /**
      * Returns a list of all connected components.
      */
@@ -172,7 +172,7 @@ var NoGo = Class.create(CombinatorialGame, {
         }
         return components;
     }
-    
+
     /**
      * Returns a list of lists of connected components of a color.
      */
@@ -186,7 +186,7 @@ var NoGo = Class.create(CombinatorialGame, {
                 markedColumn.push(false);
             }
         }
-        
+
         var components = [];
         //go through each vertex, build a component around it if it's the right color and not marked
         for (var column = 0; column < this.getWidth(); column++) {
@@ -200,15 +200,15 @@ var NoGo = Class.create(CombinatorialGame, {
         }
         return components;
     }
-    
+
     /**
-     * Returns the connected same-color component around a vertex.  Only 
+     * Returns the connected same-color component around a vertex.  Only
      */
     ,addToConnectedComponentAround: function(column, row, component, playerId, marked) {
         if (!marked[column][row] && this.columns[column][row] == playerId) {
             marked[column][row] = true;
             component.push([column, row]);
-            
+
             //check the four neighboring vertices
             var neighborCol;
             var neighborRow;
@@ -217,7 +217,7 @@ var NoGo = Class.create(CombinatorialGame, {
                 neighborCol = column;
                 neighborRow = row - 1;
                 this.addToConnectedComponentAround(neighborCol, neighborRow, component, playerId, marked);
-            } 
+            }
             //check to the right
             if (column < this.getWidth() - 1) {
                 neighborCol = column + 1;
@@ -238,7 +238,7 @@ var NoGo = Class.create(CombinatorialGame, {
             }
         }
     }
-    
+
     /**
      * Checks that all components have a liberty.
      */
@@ -252,7 +252,7 @@ var NoGo = Class.create(CombinatorialGame, {
         }
         return true;
     }
-    
+
     /**
      * Checks that a component has a liberty.
      */
@@ -281,13 +281,13 @@ var NoGo = Class.create(CombinatorialGame, {
         }
         return false;
     }
-    
+
     /**
      * Gets the options.
      */
     ,getOptionsForPlayer: function(playerId) {
         var options = [];
-        
+
         for (var column = 0; column < this.getWidth(); column ++) {
             for (var row = 0; row < this.getHeight(); row++) {
                 if (this.columns[column][row] == this.UNCOLORED) {
@@ -301,7 +301,7 @@ var NoGo = Class.create(CombinatorialGame, {
         }
         return options;
     }
-    
+
     /**
      * Gets a single option.  This assumes that the move is legal.
      */
@@ -331,14 +331,14 @@ NoGo.prototype.PLAYER_NAMES = ["Black", "White"];
 
 
 var NoGoInteractiveView = Class.create({
-    
+
     /**
      * Constructor.
      */
     initialize: function(position) {
         this.position = position;
     }
-    
+
     /**
      * Draws the board.
      */
@@ -355,10 +355,10 @@ var NoGoInteractiveView = Class.create({
         //var boardPixelSize = 10 + (this.position.sideLength + 4) * 100
         boardSvg.setAttributeNS(null, "width", boardPixelSize);
         boardSvg.setAttributeNS(null, "height", boardPixelSize);
-        
+
         var width = this.position.getWidth();
         var height = this.position.getHeight();
-        
+
         //get some dimensions based on the canvas size
         var maxCircleWidth = (boardPixelSize - 10) / width;
         var maxCircleHeight = (boardPixelSize - 10) / (height + 2);
@@ -367,7 +367,7 @@ var NoGoInteractiveView = Class.create({
         var boxSide = maxDiameter;
         var nodeRadius = Math.floor(.5 * maxDiameter * (1-padPercentage));
         var nodePadding = Math.floor(maxDiameter * padPercentage);
-        
+
         //draw the board
         for (var colIndex = 0; colIndex < width; colIndex++) {
             //draw the boxes in this column
@@ -426,13 +426,13 @@ var NoGoInteractiveView = Class.create({
     ,getNextPositionFromClick: function(event, currentPlayer, containerElement, player) {
         var column = event.target.column;
         var row = event.target.row;
-        
+
         if (this.position.isMoveLegal(column, row, currentPlayer)) {
             var option = this.position.getOption(column, row, currentPlayer);
             player.sendMoveToRef(option);
         }
     }
-    
+
 }); //end of NoGoInteractiveView class
 
 /**
@@ -476,7 +476,7 @@ function newNoGoGame() {
     var game = new NoGo(width, height);
     var players = [playerOptions[leftPlayer], playerOptions[rightPlayer]];
     var ref = new Referee(game, players, viewFactory, "MainGameBoard", $('messageBox'), controlForm);
-    
+
 }
 
 
@@ -508,7 +508,7 @@ var GridDistanceGame = Class.create(CombinatorialGame, {
         }
         this.playerNames = ["Blue", "Red"];
     }
-    
+
     /**
      * Clones the columns.
      */
@@ -523,21 +523,21 @@ var GridDistanceGame = Class.create(CombinatorialGame, {
         }
         return columnsClone;
     }
-    
+
     /**
      * Clones this.
      */
     ,clone: function() {
         return new GridDistanceGame(this.sameDistances, this.differentDistances, this.columns);
     }
-    
+
     /**
      * Returns the width of this board.
      */
     ,getWidth: function() {
         return this.columns.length;
     }
-    
+
     /**
      * Returns the height of this board.
      */
@@ -548,7 +548,7 @@ var GridDistanceGame = Class.create(CombinatorialGame, {
             return this.columns[0].length;
         }
     }
-    
+
     /**
      * Equals!
      */
@@ -567,14 +567,14 @@ var GridDistanceGame = Class.create(CombinatorialGame, {
         }
         return true;
     }
-    
+
     /**
      * Gets an array of all coordinates (2-tuple) that are at a given distance from the given coordinates on this board.
      */
     ,getDistanceCoordinatesFrom: function(column, row, distance) {
         var coordinates = [];
         //these will be laid out in a diamond from (column, row).
-        
+
         //first do those along the top-right edge
         for (var i = 0; i < distance; i++) {
             var coordinate = [column + i, row - distance + i];
@@ -605,13 +605,13 @@ var GridDistanceGame = Class.create(CombinatorialGame, {
         }
         return coordinates;
     }
-    
+
     /**
      * Gets the options.
      */
     ,getOptionsForPlayer: function(playerId) {
         var options = [];
-        
+
         for (var column = 0; column < this.getWidth(); column ++) {
             for (var row = 0; row < this.getHeight(); row++) {
                 if (this.columns[column][row] == this.UNCOLORED) {
@@ -625,7 +625,7 @@ var GridDistanceGame = Class.create(CombinatorialGame, {
         }
         return options;
     }
-    
+
     /**
      * Gets a single option.  This assumes that the move is legal.
      */
@@ -644,7 +644,7 @@ var GridDistanceGame = Class.create(CombinatorialGame, {
             return false;
         } else {
             //[column, row] is uncolored, good!
-            
+
             //now check that the vertices at the illegal same distances have a different color
             for (var i = 0; i < this.sameDistances; i++) {
                 var distance = this.sameDistances[i];
@@ -658,7 +658,7 @@ var GridDistanceGame = Class.create(CombinatorialGame, {
                     }
                 }
             }
-            
+
             //now check that it doesn't have a different color from the illegal different distances
             for (var i = 0; i < this.differentDistances; i++) {
                 var distance = this.differentDistances[i];
@@ -681,14 +681,14 @@ GridDistanceGame.prototype.PLAYER_NAMES = ["Blue", "Red"];
 
 
 var GridDistanceGameInteractiveView = Class.create({
-    
+
     /**
      * Constructor.
      */
     initialize: function(position) {
         this.position = position;
     }
-    
+
     /**
      * Draws the board.
      */
@@ -705,10 +705,10 @@ var GridDistanceGameInteractiveView = Class.create({
         //var boardPixelSize = 10 + (this.position.sideLength + 4) * 100
         boardSvg.setAttributeNS(null, "width", boardPixelSize);
         boardSvg.setAttributeNS(null, "height", boardPixelSize);
-        
+
         var width = this.position.getWidth();
         var height = this.position.getHeight();
-        
+
         //get some dimensions based on the canvas size
         var maxCircleWidth = (boardPixelSize - 10) / width;
         var maxCircleHeight = (boardPixelSize - 10) / (height + 2);
@@ -717,7 +717,7 @@ var GridDistanceGameInteractiveView = Class.create({
         var boxSide = maxDiameter;
         var nodeRadius = Math.floor(.5 * maxDiameter * (1-padPercentage));
         var nodePadding = Math.floor(maxDiameter * padPercentage);
-        
+
         //draw the board
         for (var colIndex = 0; colIndex < width; colIndex++) {
             //draw the boxes in this column
@@ -776,13 +776,13 @@ var GridDistanceGameInteractiveView = Class.create({
     ,getNextPositionFromClick: function(event, currentPlayer, containerElement, player) {
         var column = event.target.column;
         var row = event.target.row;
-        
+
         if (this.position.isMoveLegal(column, row, currentPlayer)) {
             var option = this.position.getOption(column, row, currentPlayer);
             player.sendMoveToRef(option);
         }
     }
-    
+
 }); //end of GridDistanceGameInteractiveView class
 
 /**
@@ -826,7 +826,7 @@ function newColGame() {
     var game = new GridDistanceGame([1], [], width, height);
     var players = [playerOptions[leftPlayer], playerOptions[rightPlayer]];
     var ref = new Referee(game, players, viewFactory, "MainGameBoard", $('messageBox'), controlForm);
-    
+
 }
 
 
@@ -837,17 +837,17 @@ function newColGame() {
 
 /**
  * Binary Geography, the impartial version.
- * 
+ *
  * Grid is stored as a 2D array of booleans.
  * @author Kyle Burke
  */
 var BinaryGeography = Class.create(CombinatorialGame, {
-   
+
     /**
      * Constructor.
      */
     initialize: function(height, width, blackStartColumn, blackStartRow, whiteStartColumn, whiteStartRow) {
-    
+
         this.EMPTY = 0;
         this.BLACK = 1;
         this.WHITE = -1;
@@ -863,17 +863,17 @@ var BinaryGeography = Class.create(CombinatorialGame, {
         }
         if (whiteStartRow == null) {
             whiteStartRow = Math.floor(Math.random() * width);
-        } 
+        }
         while (whiteStartColumn == blackStartColumn && whiteStartRow == blackStartRow) {
             whiteStartColumn = Math.floor(Math.random() * height);
             whiteStartRow = Math.floor(Math.random() * width);
         }
-        
+
         this.lastBlackColumn = blackStartColumn;
         this.lastBlackRow = blackStartRow;
         this.lastWhiteColumn = whiteStartColumn;
         this.lastWhiteRow = whiteStartRow;
-        
+
         this.columns = new Array();
         for (var colI = 0; colI < width; colI++) {
             var column = new Array();
@@ -885,14 +885,14 @@ var BinaryGeography = Class.create(CombinatorialGame, {
         this.columns[blackStartColumn][blackStartRow] = this.BLACK;
         this.columns[whiteStartColumn][whiteStartRow] = this.WHITE;
     }
-    
+
     /**
      * Returns the width of this board.
      */
     ,getWidth: function() {
         return this.columns.length;
     }
-    
+
     /**
      * Returns the height of this board.
      */
@@ -903,7 +903,7 @@ var BinaryGeography = Class.create(CombinatorialGame, {
             return this.columns[0].length;
         }
     }
-    
+
     /**
      * Equals!
      */
@@ -922,7 +922,7 @@ var BinaryGeography = Class.create(CombinatorialGame, {
         }
         return true;
     }
-    
+
     /**
      * Clone.
      */
@@ -941,7 +941,7 @@ var BinaryGeography = Class.create(CombinatorialGame, {
         other.lastWhiteRow = this.lastWhiteRow;
         return other;
     }
-    
+
     /**
      * Gets the options.
      */
@@ -969,7 +969,7 @@ var BinaryGeography = Class.create(CombinatorialGame, {
         }
         return options;
     }
-        
+
     /**
      * Gets the result of a play.  (This is not a required (inheriting) function.)
      */
@@ -985,21 +985,21 @@ var BinaryGeography = Class.create(CombinatorialGame, {
         }
         return option;
     }
-    
+
 }); //end of BinaryGeography class
 
 
 
 
 var InteractiveBinaryGeographyView = Class.create({
-    
+
     /**
      * Constructor.
      */
     initialize: function(position) {
         this.position = position;
     }
-    
+
     /**
      * Draws the board.
      */
@@ -1016,10 +1016,10 @@ var InteractiveBinaryGeographyView = Class.create({
         //var boardPixelSize = 10 + (this.position.sideLength + 4) * 100
         boardSvg.setAttributeNS(null, "width", boardPixelSize);
         boardSvg.setAttributeNS(null, "height", boardPixelSize);
-        
+
         var width = this.position.getWidth();
         var height = this.position.getHeight();
-        
+
         //get some dimensions based on the canvas size
         var maxCircleWidth = (boardPixelSize - 10) / width;
         var maxCircleHeight = (boardPixelSize - 10) / (height + 2);
@@ -1028,7 +1028,7 @@ var InteractiveBinaryGeographyView = Class.create({
         var boxSide = maxDiameter;
         var nodeRadius = Math.floor(.5 * maxDiameter * (1-padPercentage));
         var nodePadding = Math.floor(maxDiameter * padPercentage);
-        
+
         //draw the board
         for (var colIndex = 0; colIndex < width; colIndex++) {
             //draw the boxes in this column
@@ -1131,7 +1131,7 @@ var InteractiveBinaryGeographyView = Class.create({
             this.popup = null;
         }
     }
-    
+
 }); //end of InteractiveBinaryGeographyView class
 
 /**
@@ -1175,7 +1175,7 @@ function newBinaryGeographyGame() {
     var game = new BinaryGeography(height, width);
     var players = [playerOptions[leftPlayer], playerOptions[rightPlayer]];
     var ref = new Referee(game, players, viewFactory, "MainGameBoard", $('messageBox'), controlForm);
-    
+
 }
 
 
@@ -1183,20 +1183,20 @@ function newBinaryGeographyGame() {
 
 /**
  * Popping Balloons.
- * 
+ *
  * Grid is stored as a 2D array of booleans.
  * @author Kyle Burke
  */
 var PoppingBalloons = Class.create(CombinatorialGame, {
-   
+
     /**
      * Constructor.
      */
     initialize: function(height, width) {
         var balloonLikelihood = .85;
-        
+
         this.playerNames = ["Left", "Right"];
-        
+
         this.columns = new Array();
         for (var colI = 0; colI < width; colI++) {
             var column = new Array();
@@ -1206,14 +1206,14 @@ var PoppingBalloons = Class.create(CombinatorialGame, {
             this.columns.push(column);
         }
     }
-    
+
     /**
      * Returns the width of this board.
      */
     ,getWidth: function() {
         return this.columns.length;
     }
-    
+
     /**
      * Returns the height of this board.
      */
@@ -1224,7 +1224,7 @@ var PoppingBalloons = Class.create(CombinatorialGame, {
             return this.columns[0].length;
         }
     }
-    
+
     /**
      * Equals!
      */
@@ -1243,7 +1243,7 @@ var PoppingBalloons = Class.create(CombinatorialGame, {
         }
         return true;
     }
-    
+
     /**
      * Clone.
      */
@@ -1258,7 +1258,7 @@ var PoppingBalloons = Class.create(CombinatorialGame, {
         }
         return other;
     }
-    
+
     /**
      * Gets the options.
      */
@@ -1275,7 +1275,7 @@ var PoppingBalloons = Class.create(CombinatorialGame, {
                 }
             }
         }
-        
+
         //horizontal balloon pair options
         for (var col = 0; col < width-1; col++) {
             for (var row = 0; row < height; row++) {
@@ -1285,7 +1285,7 @@ var PoppingBalloons = Class.create(CombinatorialGame, {
                 }
             }
         }
-        
+
         //vertical balloon pair options
         for (var col = 0; col < width; col++) {
             for (var row = 0; row < height-1; row++) {
@@ -1295,7 +1295,7 @@ var PoppingBalloons = Class.create(CombinatorialGame, {
                 }
             }
         }
-        
+
         //all balloons in a 2x2 square options
         for (var col = 0; col < width-1; col++) {
             for (var row = 0; row < height-1; row++) {
@@ -1308,7 +1308,7 @@ var PoppingBalloons = Class.create(CombinatorialGame, {
         }
         return options;
     }
-        
+
     /**
      * Gets the result of a single balloon pop.  (This is not a required (inheriting) function.)
      */
@@ -1317,7 +1317,7 @@ var PoppingBalloons = Class.create(CombinatorialGame, {
         option.columns[column][row] = false;
         return option;
     }
-    
+
     /**
      * Gets the result of popping two balloons next to each other (horizontally).
      */
@@ -1327,7 +1327,7 @@ var PoppingBalloons = Class.create(CombinatorialGame, {
         option.columns[column+1][row] = false;
         return option;
     }
-    
+
     /**
      * Gets the result of popping two balloons on top of each other (vertically).
      */
@@ -1337,7 +1337,7 @@ var PoppingBalloons = Class.create(CombinatorialGame, {
         option.columns[column][row+1] = false;
         return option;
     }
-    
+
     /**
      * Gets the result of popping two balloons on top of each other (vertically).
      */
@@ -1349,19 +1349,19 @@ var PoppingBalloons = Class.create(CombinatorialGame, {
         option.columns[column+1][row+1] = false;
         return option;
     }
-    
+
 }); //end of PoppingBalloons class
 
 
 var NonInteractivePoppingBalloonsView = Class.create({
-    
+
     /**
      * Constructor.
      */
     initialize: function(position) {
         this.position = position;
     }
-    
+
     /**
      * Draws the board.
      */
@@ -1379,10 +1379,10 @@ var NonInteractivePoppingBalloonsView = Class.create({
         //var boardPixelSize = 10 + (this.position.sideLength + 4) * 100
         boardSvg.setAttributeNS(null, "width", boardPixelSize);
         boardSvg.setAttributeNS(null, "height", boardPixelSize);
-        
+
         var width = this.position.getWidth();
         var height = this.position.getHeight();
-        
+
         //get some dimensions based on the canvas size
         var maxCircleWidth = (boardPixelSize - 10) / width;
         var maxCircleHeight = (boardPixelSize - 10) / (height + 2);
@@ -1391,7 +1391,7 @@ var NonInteractivePoppingBalloonsView = Class.create({
         var boxSide = maxDiameter;
         var nodeRadius = Math.floor(.5 * maxDiameter * (1-padPercentage));
         var nodePadding = Math.floor(maxDiameter * padPercentage);
-        
+
         //draw the board
         for (var colIndex = 0; colIndex < width; colIndex++) {
             //draw the boxes in this column
@@ -1420,7 +1420,7 @@ var NonInteractivePoppingBalloonsView = Class.create({
             }
         }
     }
-    
+
 }); //end of NonInteractivePoppingBalloonsView class.
 
 /**
@@ -1453,14 +1453,14 @@ var NonInteractivePoppingBalloonsViewFactory = Class.create({
 
 
 var InteractivePoppingBalloonsView = Class.create({
-    
+
     /**
      * Constructor.
      */
     initialize: function(position) {
         this.position = position;
     }
-    
+
     /**
      * Draws the board.
      */
@@ -1478,10 +1478,10 @@ var InteractivePoppingBalloonsView = Class.create({
         //var boardPixelSize = 10 + (this.position.sideLength + 4) * 100
         boardSvg.setAttributeNS(null, "width", boardPixelSize);
         boardSvg.setAttributeNS(null, "height", boardPixelSize);
-        
+
         var width = this.position.getWidth();
         var height = this.position.getHeight();
-        
+
         //get some dimensions based on the canvas size
         var maxCircleWidth = (boardPixelSize - 10) / width;
         var maxCircleHeight = (boardPixelSize - 10) / (height + 2);
@@ -1490,7 +1490,7 @@ var InteractivePoppingBalloonsView = Class.create({
         var boxSide = maxDiameter;
         var nodeRadius = Math.floor(.5 * maxDiameter * (1-padPercentage));
         var nodePadding = Math.floor(maxDiameter * padPercentage);
-        
+
         //draw the board
         for (var colIndex = 0; colIndex < width; colIndex++) {
             //draw the boxes in this column
@@ -1515,7 +1515,7 @@ var InteractivePoppingBalloonsView = Class.create({
                         this.position.getSingleBalloonOption(colIndex, rowIndex);
                     }
                     boardSvg.appendChild(circle);
-                    
+
                     //code to add the number to the balloon
                     //adapted from fiveelements' answer at https://stackoverflow.com/questions/57515197/how-to-add-text-inside-a-circle-svg-using-javascript
                     const balloonIndex = rowIndex * width + colIndex;
@@ -1530,7 +1530,7 @@ var InteractivePoppingBalloonsView = Class.create({
                     number.textContent = '' + balloonIndex;
                     boardSvg.appendChild(number);
                     //console.log("added number");
-                    
+
                     //now check for other nearby balloons
                     if (colIndex + 1 < width && this.position.columns[colIndex+1][rowIndex]) {
                         //there is a balloon to the right (as well)
@@ -1554,7 +1554,7 @@ var InteractivePoppingBalloonsView = Class.create({
                         }
                         boardSvg.appendChild(square);
                     }
-                    
+
                     if (rowIndex + 1 < height && this.position.columns[colIndex][rowIndex + 1]) {
                         //there is a balloon below this one (as well)
                         var square = document.createElementNS(svgNS,"rect");
@@ -1576,21 +1576,21 @@ var InteractivePoppingBalloonsView = Class.create({
                             square.onclick = function(even) {player.handleClick(event);}
                         }
                         boardSvg.appendChild(square);
-                        
+
                     }
-                    
+
                 }
                 //check to see if there should be a quad balloon popper
-                if (colIndex + 1 < width && rowIndex + 1 < height && 
+                if (colIndex + 1 < width && rowIndex + 1 < height &&
                     ((this.position.columns[colIndex + 1][rowIndex + 1] &&
                       this.position.columns[colIndex][rowIndex]) ||
                      (this.position.columns[colIndex + 1][rowIndex] &&
                       this.position.columns[colIndex][rowIndex + 1]))) {
                     //there are diagonal balloons, so we should be able to pop the quad
-                    
+
                     var square = document.createElementNS(svgNS,"rect");
                     var squareWidth = 2.2 * boxSide * padPercentage;
-                    var squareX = cx + .707 * nodeRadius; 
+                    var squareX = cx + .707 * nodeRadius;
                     var squareY = cy + .707 * nodeRadius;
                     square.setAttributeNS(null, "x", squareX + "");
                     square.setAttributeNS(null, "y", squareY + "");
@@ -1631,10 +1631,10 @@ var InteractivePoppingBalloonsView = Class.create({
         } else {
             console.log("Didn't recognize the popType: " + event.target.popType);
         }
-        
+
         player.sendMoveToRef(chosenOption);
     }
-    
+
 }); //end of InteractivePoppingBalloonsView class
 
 /**
@@ -1689,20 +1689,20 @@ function newPoppingBalloonsGame() {
 
 /**
  * Flag Coloring.
- * 
+ *
  * Grid is stored as a 2D array of strings.
  * @author Kyle Burke
  */
 var FlagColoring = Class.create(CombinatorialGame, {
-   
+
     /**
      * Constructor.
      */
     initialize: function(height, width, colorsList) {
         this.colorsList = colorsList || ["red", "yellow", "green", "blue", "black", "white"];
-        
+
         this.playerNames = ["Left", "Right"];
-        
+
         this.columns = new Array();
         for (var colI = 0; colI < width; colI++) {
             var column = new Array();
@@ -1712,14 +1712,14 @@ var FlagColoring = Class.create(CombinatorialGame, {
             this.columns.push(column);
         }
     }
-    
+
     /**
      * Returns the width of this board.
      */
     ,getWidth: function() {
         return this.columns.length;
     }
-    
+
     /**
      * Returns the height of this board.
      */
@@ -1730,7 +1730,7 @@ var FlagColoring = Class.create(CombinatorialGame, {
             return this.columns[0].length;
         }
     }
-    
+
     /**
      * Equals!
      */
@@ -1749,7 +1749,7 @@ var FlagColoring = Class.create(CombinatorialGame, {
         }
         return true;
     }
-    
+
     /**
      * Clone.
      */
@@ -1764,12 +1764,12 @@ var FlagColoring = Class.create(CombinatorialGame, {
         }
         return other;
     }
-    
+
     /**
      * Gets two lists, a list of the vertices in the same region as the current vertex and the neighbors of that region.
      */
     ,getRegionAndNeighbors: function(column, row) {
-        
+
         //unmark all the vertices
         var marks = [];
         for (var i = 0; i < this.getWidth(); i++) {
@@ -1779,21 +1779,21 @@ var FlagColoring = Class.create(CombinatorialGame, {
             }
             marks.push(columnMarks);
         }
-        
+
         //clone the current board (might not need this)
         var clone = this.clone();
-        
+
         //grow the region out from the current vertex
         var region = [];
         var neighbors = [];
-        
+
         var regionColor = this.columns[column][row];
-        
+
         this.getRegionAndNeighborsHelper(column, row, regionColor, marks, region, neighbors);
-        
+
         return [region, neighbors];
     }
-    
+
     /**
      * Helper function for getRegionAndNeighbors.  This is void, instead modifying marks, region, and neighbors.
      */
@@ -1802,12 +1802,12 @@ var FlagColoring = Class.create(CombinatorialGame, {
             return;
         }
         marks[column][row] = true;
-        
+
         //check whether we're in the same region
         if (regionColor == this.columns[column][row]) {
             //yes!  Add and keep expanding
             region.push([column, row]);
-        
+
             //check the four adjacent vertices to keep expanding
             //first to the left
             var nextCol = column - 1;
@@ -1815,35 +1815,35 @@ var FlagColoring = Class.create(CombinatorialGame, {
             if (nextCol >= 0) {
                 this.getRegionAndNeighborsHelper(nextCol, nextRow, regionColor, marks, region, neighbors);
             }
-            
+
             //next above
             nextCol = column;
             nextRow = row-1;
             if (nextRow >= 0) {
                 this.getRegionAndNeighborsHelper(nextCol, nextRow, regionColor, marks, region, neighbors);
             }
-            
+
             //next right
             nextCol = column + 1;
             nextRow = row;
             if (nextCol <= this.getWidth() - 1) {
                 this.getRegionAndNeighborsHelper(nextCol, nextRow, regionColor, marks, region, neighbors);
             }
-            
+
             //next below
             nextCol = column;
             nextRow = row + 1;
             if (nextRow <= this.getHeight() - 1) {
                 this.getRegionAndNeighborsHelper(nextCol, nextRow, regionColor, marks, region, neighbors);
             }
-            
+
         } else {
             //we're just a neighbor
             neighbors.push([column, row]);
         }
-        
+
     }
-    
+
     /**
      * Gets the options.
      */
@@ -1851,7 +1851,7 @@ var FlagColoring = Class.create(CombinatorialGame, {
         var options = new Array();
         var width = this.getWidth();
         var height = this.getHeight();
-        
+
         //check which vertices we've already seen using an array of booleans
         var inRegionAlreadySeen = [];
         for (var col = 0; col < width; col++) {
@@ -1861,7 +1861,7 @@ var FlagColoring = Class.create(CombinatorialGame, {
             }
             inRegionAlreadySeen.push(inRegionAlreadySeenColumn);
         }
-        
+
         //traverse all vertices and add the options there if we haven't yet
         for (var col = 0; col < width; col++) {
             for (var row = 0; row < height; row++) {
@@ -1885,13 +1885,13 @@ var FlagColoring = Class.create(CombinatorialGame, {
                             neighborColors.push(neighborColor);
                         }
                     }
-                    
+
                     //add moves to each color
                     for (var i = 0; i < neighborColors.length; i++) {
                         var option = this.colorRegion(region, neighborColors[i]);
                         options.push(option);
                     }
-                    
+
                     //mark all vertices in the region as already seen
                     for (var i = 0; i < region.length; i++) {
                         var vertex = region[i];
@@ -1902,7 +1902,7 @@ var FlagColoring = Class.create(CombinatorialGame, {
         }
         return options;
     }
-    
+
     /**
      * Gets a new position where the given region (list of coordinates) is colored.
      */
@@ -1914,19 +1914,19 @@ var FlagColoring = Class.create(CombinatorialGame, {
         }
         return clone;
     }
-    
+
 }); //end of FlagColoring class
 
 
 var NonInteractiveFlagColoringView = Class.create({
-    
+
     /**
      * Constructor.
      */
     initialize: function(position) {
         this.position = position;
     }
-    
+
     /**
      * Draws the board.
      */
@@ -1944,10 +1944,10 @@ var NonInteractiveFlagColoringView = Class.create({
         //var boardPixelSize = 10 + (this.position.sideLength + 4) * 100
         boardSvg.setAttributeNS(null, "width", boardPixelSize);
         boardSvg.setAttributeNS(null, "height", boardPixelSize);
-        
+
         var width = this.position.getWidth();
         var height = this.position.getHeight();
-        
+
         //get some dimensions based on the canvas size
         var maxCircleWidth = (boardPixelSize - 10) / width;
         var maxCircleHeight = (boardPixelSize - 10) / (height + 2);
@@ -1956,7 +1956,7 @@ var NonInteractiveFlagColoringView = Class.create({
         var boxSide = maxDiameter;
         var nodeRadius = Math.floor(.5 * maxDiameter * (1-padPercentage));
         var nodePadding = Math.floor(maxDiameter * padPercentage);
-        
+
         //draw the board
         for (var colIndex = 0; colIndex < width; colIndex++) {
             //draw the vertices in this column
@@ -1982,7 +1982,7 @@ var NonInteractiveFlagColoringView = Class.create({
             }
         }
     }
-    
+
 }); //end of NonInteractiveFlagColoringView class.
 
 /**
@@ -2015,14 +2015,14 @@ var NonInteractiveFlagColoringViewFactory = Class.create({
 
 
 var InteractiveFlagColoringView = Class.create({
-    
+
     /**
      * Constructor.
      */
     initialize: function(position) {
         this.position = position;
     }
-    
+
     /**
      * Draws the board.
      */
@@ -2040,10 +2040,10 @@ var InteractiveFlagColoringView = Class.create({
         //var boardPixelSize = 10 + (this.position.sideLength + 4) * 100
         boardSvg.setAttributeNS(null, "width", boardPixelSize);
         boardSvg.setAttributeNS(null, "height", boardPixelSize);
-        
+
         var width = this.position.getWidth();
         var height = this.position.getHeight();
-        
+
         //get some dimensions based on the canvas size
         var maxCircleWidth = (boardPixelSize - 10) / width;
         var maxCircleHeight = (boardPixelSize - 10) / (height + 2);
@@ -2052,7 +2052,7 @@ var InteractiveFlagColoringView = Class.create({
         var boxSide = maxDiameter;
         var nodeRadius = Math.floor(.5 * maxDiameter * (1-padPercentage));
         var nodePadding = Math.floor(maxDiameter * padPercentage);
-        
+
         //draw a gray frame around everything
         var frame = document.createElementNS(svgNS, "rect");
         frame.setAttributeNS(null, "x", 5);
@@ -2062,12 +2062,12 @@ var InteractiveFlagColoringView = Class.create({
         frame.style.strokeWidth = 4;
         frame.style.stroke = "gray";
         boardSvg.appendChild(frame);
-        
+
         //draw the board
         for (var colIndex = 0; colIndex < width; colIndex++) {
             //draw the boxes in this column
             for (var rowIndex = 0; rowIndex < height; rowIndex ++) {
-                
+
                 var square = document.createElementNS(svgNS, "rect");
                 var x = 5 + Math.floor((colIndex) * boxSide);
                 var y = 5 + Math.floor((rowIndex) * boxSide);
@@ -2100,9 +2100,9 @@ var InteractiveFlagColoringView = Class.create({
         var circle = event.target;
         var column = event.target.column;
         var row = event.target.row;
-        
+
         //get the list of colors (as neighborColors)
-        
+
         var regionAndNeighbors = this.position.getRegionAndNeighbors(column, row);
         var region = regionAndNeighbors[0];
         var neighbors = regionAndNeighbors[1];
@@ -2122,10 +2122,10 @@ var InteractiveFlagColoringView = Class.create({
                 neighborColors.push(neighborColor);
             }
         }
-        
+
         //console.log("neighborColors: " + neighborColors);
-        
-        
+
+
         //create the popup
         this.popup = document.createElement("div");
         for (var i = 0; i < neighborColors.length; i++) {
@@ -2162,7 +2162,7 @@ var InteractiveFlagColoringView = Class.create({
             this.popup = null;
         }
     }
-    
+
 }); //end of InteractiveFlagColoringView class
 
 /**
@@ -2217,11 +2217,11 @@ function newFlagColoringGame() {
 
 /**
  * Quantum Nim position.
- * 
+ *
  * Piles are stored in a 2D array of ints.  Each element is a realization.
  */
 var QuantumNim = Class.create(CombinatorialGame, {
-   
+
     /**
      * Constructor.
      */
@@ -2237,7 +2237,7 @@ var QuantumNim = Class.create(CombinatorialGame, {
             this.realizations.push(realization);
         }
     }
-    
+
     /**
      * Returns the width of this board.
      */
@@ -2248,28 +2248,28 @@ var QuantumNim = Class.create(CombinatorialGame, {
             return this.realizations[0].length;
         }
     }
-    
+
     /**
      * Returns the number of realizations.
      */
     ,getNumRealizations: function() {
         return this.getHeight();
     }
-    
+
     /**
      * Returns the height of this board.
      */
     ,getHeight: function() {
         return this.realizations.length;
     }
-    
+
     /**
      * Returns the number of piles.
      */
     ,getNumPiles: function() {
         return this.getWidth();
     }
-    
+
     /**
      * Equals!
      */
@@ -2288,7 +2288,7 @@ var QuantumNim = Class.create(CombinatorialGame, {
         }
         return true;
     }
-    
+
     /**
      * Clone.
      */
@@ -2303,7 +2303,7 @@ var QuantumNim = Class.create(CombinatorialGame, {
         }
         return other;
     }
-    
+
     /**
      * Returns whether a realization is collapsed out.
      */
@@ -2316,7 +2316,7 @@ var QuantumNim = Class.create(CombinatorialGame, {
         }
         return false;
     }
-    
+
     /**
      * Returns whether a player can play on one of the columns.
      */
@@ -2330,7 +2330,7 @@ var QuantumNim = Class.create(CombinatorialGame, {
         }
         return false;
     }
-    
+
     /**
      * Returns whether a player can play on one of the columns.
      */
@@ -2344,14 +2344,14 @@ var QuantumNim = Class.create(CombinatorialGame, {
         }
         return maxPileSize;
     }
-    
+
     /**
      * Returns the position after a player removes numSticks from pile # pileIndex.
      */
     ,playAtPile: function(pileIndex, numSticks) {
         if (this.maxTakeableFromPile(pileIndex) < numSticks) {
             return null;  //TODO: throw an error?
-        } 
+        }
         var option = this.clone();
         for (var rIndex = 0; rIndex < this.getNumRealizations(); rIndex++) {
             if (!this.isRealizationCollapsed(rIndex)) {
@@ -2361,7 +2361,7 @@ var QuantumNim = Class.create(CombinatorialGame, {
         }
         return option;
     }
-    
+
     /**
      * Returns the position resulting from a player making a quantum move: numSticksA from pileIndexA and numSticksB from pileIndexB.
      */
@@ -2385,7 +2385,7 @@ var QuantumNim = Class.create(CombinatorialGame, {
                         newRealizationB.push(realization[pileIndex]);
                         if (pileIndex == pileIndexA) {
                             newRealizationA[pileIndex] -= numSticksA;
-                        } 
+                        }
                         if (pileIndex == pileIndexB) {
                             newRealizationB[pileIndex] -= numSticksB;
                         }
@@ -2398,7 +2398,7 @@ var QuantumNim = Class.create(CombinatorialGame, {
             }
             option.realizations = newRealizations;
             return option;
-            
+
             /*
             //get the two individual options
             var optionA = this.playAtPile(pileIndexA, numSticksA);
@@ -2411,7 +2411,7 @@ var QuantumNim = Class.create(CombinatorialGame, {
             return optionA;*/
         }
     }
-    
+
     /**
      * Gets the options.
      */
@@ -2424,7 +2424,7 @@ var QuantumNim = Class.create(CombinatorialGame, {
                 options.push(this.playAtPile(pileIndex, numSticks));
             }
         }
-        
+
         //next get the options from quantum moves
         for (var pileIndexA = 0; pileIndexA < this.getNumPiles(); pileIndexA++) {
             for (var pileIndexB = pileIndexA; pileIndexB < this.getNumPiles(); pileIndexB++) {
@@ -2441,17 +2441,17 @@ var QuantumNim = Class.create(CombinatorialGame, {
                 }
             }
         }
-        
+
         return options;
     }
-    
+
 }); //end of QuantumNim class
 
 
 
 
 var InteractiveQuantumNimView = Class.create({
-    
+
     /**
      * Constructor.
      */
@@ -2461,7 +2461,7 @@ var InteractiveQuantumNimView = Class.create({
         this.firstPileIndex = -1;
         this.firstNumSticks = -1;
     }
-    
+
     /**
      * Draws the board.
      */
@@ -2478,10 +2478,10 @@ var InteractiveQuantumNimView = Class.create({
         //var boardPixelSize = 10 + (this.position.sideLength + 4) * 100
         boardSvg.setAttributeNS(null, "width", boardPixelSize);
         //boardSvg.setAttributeNS(null, "height", boardPixelSize);
-        
+
         var width = this.position.getWidth();
         var height = this.position.getHeight(); //plus 1 for the triangles
-        
+
         //get some dimensions based on the canvas size
         var maxBoxWidth = (boardPixelSize - 10) / width;
         //the boxes get too small as the board increases in height, so we're not doing this here.
@@ -2490,7 +2490,7 @@ var InteractiveQuantumNimView = Class.create({
         var maxBoxSide = Math.min(maxBoxWidth, maxBoxHeight, 200);
         var boardHeight = maxBoxSide * (height + 2) + 10;
         boardSvg.setAttributeNS(null, "height", boardHeight);
-        
+
         //draw the board
         for (var colIndex = 0; colIndex < width; colIndex++) {
             //draw the triangle at the top of the column
@@ -2534,7 +2534,7 @@ var InteractiveQuantumNimView = Class.create({
                 box.style.stroke = "black";
                 box.style.fill = "white";
                 boardSvg.appendChild(box);
-                
+
                 var text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
                 var textX = boxX + 2 * maxBoxSide / 6;
                 var textY = boxY + 2 * maxBoxSide / 3;
@@ -2597,7 +2597,7 @@ var InteractiveQuantumNimView = Class.create({
                         self.destroyPopup();
                     };
                     self.popup.appendChild(quantumButton);
-        
+
                     self.popup.style.position = "fixed";
                     self.popup.style.display = "block";
                     self.popup.style.opacity = 1;
@@ -2607,12 +2607,12 @@ var InteractiveQuantumNimView = Class.create({
                     self.popup.style.top = event.clientY + "px";
                     document.body.appendChild(self.popup);
                 }
-                    
-                
+
+
             };
             this.popup.appendChild(button);
         }
-        
+
         this.popup.style.position = "fixed";
         this.popup.style.display = "block";
         this.popup.style.opacity = 1;
@@ -2622,8 +2622,8 @@ var InteractiveQuantumNimView = Class.create({
         this.popup.style.top = event.clientY + "px";
         document.body.appendChild(this.popup);
         return null;
-        
-        
+
+
     }
 
     /**
@@ -2636,8 +2636,8 @@ var InteractiveQuantumNimView = Class.create({
             this.popup = null;
         }
     }
-    
-    
+
+
 });  //end of InteractiveQuantumNimView
 
 /**
@@ -2690,11 +2690,11 @@ function newQuantumNimGame() {
 
 /**
  * Demi-Quantum Nim position.
- * 
+ *
  * Piles are stored in a 2D array of ints.  Each element is a realization.
  */
 var DemiQuantumNim = Class.create(CombinatorialGame, {
-   
+
     /**
      * Constructor.
      */
@@ -2710,7 +2710,7 @@ var DemiQuantumNim = Class.create(CombinatorialGame, {
             this.realizations.push(realization);
         }
     }
-    
+
     /**
      * Returns the width of this board.
      */
@@ -2721,28 +2721,28 @@ var DemiQuantumNim = Class.create(CombinatorialGame, {
             return this.realizations[0].length;
         }
     }
-    
+
     /**
      * Returns the number of realizations.
      */
     ,getNumRealizations: function() {
         return this.getHeight();
     }
-    
+
     /**
      * Returns the height of this board.
      */
     ,getHeight: function() {
         return this.realizations.length;
     }
-    
+
     /**
      * Returns the number of piles.
      */
     ,getNumPiles: function() {
         return this.getWidth();
     }
-    
+
     /**
      * Equals!
      */
@@ -2761,7 +2761,7 @@ var DemiQuantumNim = Class.create(CombinatorialGame, {
         }
         return true;
     }
-    
+
     /**
      * Clone.
      */
@@ -2776,7 +2776,7 @@ var DemiQuantumNim = Class.create(CombinatorialGame, {
         }
         return other;
     }
-    
+
     /**
      * Returns whether a realization is collapsed out.
      */
@@ -2789,7 +2789,7 @@ var DemiQuantumNim = Class.create(CombinatorialGame, {
         }
         return false;
     }
-    
+
     /**
      * Returns whether a player can play on one of the columns.
      */
@@ -2803,7 +2803,7 @@ var DemiQuantumNim = Class.create(CombinatorialGame, {
         }
         return false;
     }
-    
+
     /**
      * Returns whether a player can play on one of the columns.
      */
@@ -2817,14 +2817,14 @@ var DemiQuantumNim = Class.create(CombinatorialGame, {
         }
         return maxPileSize;
     }
-    
+
     /**
      * Returns the position that results in a player playing in a column.
      */
     ,playAtPile: function(pileIndex, numSticks) {
         if (this.maxTakeableFromPile(pileIndex) < numSticks) {
             return null;  //TODO: throw an error?
-        } 
+        }
         var option = this.clone();
         for (var rIndex = 0; rIndex < this.getNumRealizations(); rIndex++) {
             if (!this.isRealizationCollapsed(rIndex)) {
@@ -2834,7 +2834,7 @@ var DemiQuantumNim = Class.create(CombinatorialGame, {
         }
         return option;
     }
-    
+
     /**
      * Gets the options.
      */
@@ -2848,21 +2848,21 @@ var DemiQuantumNim = Class.create(CombinatorialGame, {
         }
         return options;
     }
-    
+
 }); //end of DemiQuantumNim class
 
 
 
 
 var InteractiveDemiQuantumNimView = Class.create({
-    
+
     /**
      * Constructor.
      */
     initialize: function(position) {
         this.position = position;
     }
-    
+
     /**
      * Draws the board.
      */
@@ -2879,15 +2879,15 @@ var InteractiveDemiQuantumNimView = Class.create({
         //var boardPixelSize = 10 + (this.position.sideLength + 4) * 100
         boardSvg.setAttributeNS(null, "width", boardPixelSize);
         boardSvg.setAttributeNS(null, "height", boardPixelSize);
-        
+
         var width = this.position.getWidth();
         var height = this.position.getHeight();
-        
+
         //get some dimensions based on the canvas size
         var maxBoxWidth = (boardPixelSize - 10) / width;
         var maxBoxHeight = (boardPixelSize - 10) / (height + 1);
         var maxBoxSide = Math.min(maxBoxWidth, maxBoxHeight);
-        
+
         //draw the board
         for (var colIndex = 0; colIndex < width; colIndex++) {
             //draw the triangle at the top of the column
@@ -2931,7 +2931,7 @@ var InteractiveDemiQuantumNimView = Class.create({
                 box.style.stroke = "black";
                 box.style.fill = "white";
                 boardSvg.appendChild(box);
-                
+
                 var text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
                 var textX = boxX + maxBoxSide / 3;
                 var textY = boxY + 2* maxBoxSide / 3;
@@ -2978,7 +2978,7 @@ var InteractiveDemiQuantumNimView = Class.create({
             };
             this.popup.appendChild(button);
         }
-        
+
         this.popup.style.position = "fixed";
         this.popup.style.display = "block";
         this.popup.style.opacity = 1;
@@ -2988,8 +2988,8 @@ var InteractiveDemiQuantumNimView = Class.create({
         this.popup.style.top = event.clientY + "px";
         document.body.appendChild(this.popup);
         return null;
-        
-        
+
+
     }
 
     /**
@@ -3002,8 +3002,8 @@ var InteractiveDemiQuantumNimView = Class.create({
             this.popup = null;
         }
     }
-    
-    
+
+
 });  //end of InteractiveDemiQuantumNimView
 
 /**
@@ -3058,11 +3058,11 @@ function newDemiQuantumNimGame() {
 
 /**
  * Transverse Wave game
- * 
+ *
  * Grid is stored as a 2D array of booleans.  (Array of columns of cells.)
  */
 var TransverseWave = Class.create(CombinatorialGame, {
-    
+
     /**
      * Constructor.
      * purpleProbability is the likelihood that a single cell is purple
@@ -3081,14 +3081,14 @@ var TransverseWave = Class.create(CombinatorialGame, {
             this.columns.push(column);
         }
     }
-    
+
     /**
      * Returns the width of this board.
      */
     ,getWidth: function() {
         return this.columns.length;
     }
-    
+
     /**
      * Returns the height of this board.
      */
@@ -3099,7 +3099,7 @@ var TransverseWave = Class.create(CombinatorialGame, {
             return this.columns[0].length;
         }
     }
-    
+
     /**
      * Equals!
      */
@@ -3118,7 +3118,7 @@ var TransverseWave = Class.create(CombinatorialGame, {
         }
         return true;
     }
-    
+
     /**
      * Clone.
      */
@@ -3133,7 +3133,7 @@ var TransverseWave = Class.create(CombinatorialGame, {
         }
         return other;
     }
-    
+
     /**
      * Returns whether a player can play on one of the columns.
      */
@@ -3147,14 +3147,14 @@ var TransverseWave = Class.create(CombinatorialGame, {
         }
         return false;
     }
-    
+
     /**
      * Returns the position that results in a player playing in a column.
      */
     ,playAtColumn: function(columnIndex) {
         if (!this.canPlayColumn(columnIndex)) {
             return null;  //TODO: throw an error?
-        } 
+        }
         var option = this.clone();
         var column = option.columns[columnIndex];
         for (var rowIndex = 0; rowIndex < column.length; rowIndex++) {
@@ -3170,7 +3170,7 @@ var TransverseWave = Class.create(CombinatorialGame, {
         }
         return option;
     }
-    
+
     /**
      * Gets the options.
      */
@@ -3183,21 +3183,21 @@ var TransverseWave = Class.create(CombinatorialGame, {
         }
         return options;
     }
-    
+
 }); // end of TransverseWave class
 
 
 
 
 var InteractiveTransverseWaveView = Class.create({
-    
+
     /**
      * Constructor.
      */
     initialize: function(position) {
         this.position = position;
     }
-    
+
     /**
      * Draws the board.
      */
@@ -3214,15 +3214,15 @@ var InteractiveTransverseWaveView = Class.create({
         //var boardPixelSize = 10 + (this.position.sideLength + 4) * 100
         boardSvg.setAttributeNS(null, "width", boardPixelSize);
         boardSvg.setAttributeNS(null, "height", boardPixelSize);
-        
+
         var width = this.position.getWidth();
         var height = this.position.getHeight();
-        
+
         //get some dimensions based on the canvas size
         var maxBoxWidth = (boardPixelSize - 10) / width;
         var maxBoxHeight = (boardPixelSize - 10) / (height + 2);
         var maxBoxSide = Math.min(maxBoxWidth, maxBoxHeight);
-        
+
         //draw the board
         for (var colIndex = 0; colIndex < width; colIndex++) {
             //draw the triangle at the top of the column
@@ -3280,7 +3280,7 @@ var InteractiveTransverseWaveView = Class.create({
         var chosenOption = this.position.playAtColumn(columnIndex);
         player.sendMoveToRef(chosenOption);
     }
-    
+
 }); //end of InteractiveTransverseWaveView class
 
 /**
@@ -3759,7 +3759,7 @@ function getCommonPlayerOptions(viewFactory, delay, lowAIDifficulty, highAIDiffi
         playerOptions.push(new DepthSearchPlayer(playDelay, i));
     }
     return playerOptions;
-    
+
 }
 
 
@@ -5550,7 +5550,7 @@ var Manalath = Class.create(CombinatorialGame, {
         var option0;
         var option;
         var option1;
-        
+
         var groups = this.allGroupsOfSameColor();
         for(var i = 0; i < groups[playerId].length; i++) {
             if (groups[playerId][i].length == 4){
@@ -6930,7 +6930,7 @@ var Referee = Class.create({
             }
         }
     }
-    
+
     /**
      * Ends the game.
      */
@@ -6961,7 +6961,7 @@ var Referee = Class.create({
         //console.log("this.position: " + this.position);
         this.players[this.currentPlayer].givePosition(this.currentPlayer, this.position, this);
     }
-    
+
     /**
      * Returns whether this game is over.
      */
@@ -6969,7 +6969,7 @@ var Referee = Class.create({
         return this.isComplete;
         //return this.position.getOptionsForPlayer(this.currentPlayer).length == 0;
     }
-    
+
     /**
      *  Lets the relevant objects know that the game is over.
      */
@@ -6978,7 +6978,7 @@ var Referee = Class.create({
             this.alertWhenDone[i].gameIsOver(this);
         }
     }
-    
+
     /**
      * Returns the winner.
      */
@@ -7114,7 +7114,7 @@ var RESULT_LOSS = -1;
 
 //abstract version
 var BestMoveAndResults = Class.create( {
-    
+
     /**
      * Constructor.
      */
@@ -7122,35 +7122,35 @@ var BestMoveAndResults = Class.create( {
         this.moves = moves;
         this.depth = depth;
     }
-    
+
     /**
      * Returns whether this is a winning move.
      */
     ,winnability: function() {
         console.log("Tried calling BestMoveAndResults.winnability!");
     }
-    
+
     /**
      * Returns the depth of the knowledge.
      */
     ,getDepth: function() {
         return this.depth;
     }
-    
+
     /**
      * Returns the better choice of this and a winning move.
      */
     ,addtoWin: function(other) {
         return other;//we want the other one because it's a win
     }
-    
+
     /**
      * Returns the better choice of this and a losing move.
      */
     ,addToLoss: function(other) {
         return this; //we want this one, because the other one is a loss.
     }
-    
+
     /**
      * Returns a move chosen at random.
      */
@@ -7165,7 +7165,7 @@ var BestMoveAndResults = Class.create( {
         }
         return move;
     }
-    
+
     /**
      * Checks for parentage and prints a message.
      */
@@ -7186,8 +7186,8 @@ var BestMoveAndResults = Class.create( {
         }
         //console.log("Success in checkLegalOption!");
     }
-    
-    
+
+
 }); //end of BestMoveAndResults
 
 var WinningMoveAndResults = Class.create(BestMoveAndResults, {
@@ -7198,15 +7198,15 @@ var WinningMoveAndResults = Class.create(BestMoveAndResults, {
     initialize: function($super, moves, depth) {
         $super(moves, depth);
     }
-    
+
     ,winnability: function() {
         return RESULT_WIN;
     }
-    
+
     ,addTo: function(other) {
         return other.addToWin(this);
     }
-    
+
     ,addtoWin: function(other) {
         if (this.depth > other.depth) {
             //the other one can lead to a win faster.  Choose that one.
@@ -7215,20 +7215,20 @@ var WinningMoveAndResults = Class.create(BestMoveAndResults, {
             //this can lead to a win faster.  Choose this one.
             return this;
         } else {
-            //both lead to a win in the same amount of time.  
+            //both lead to a win in the same amount of time.
             return new WinningMoveAndResults(this.moves.concat(other.moves), this.depth);
         }
     }
-    
+
     ,addToDunno: function(other) {
         return this; //this is a win.
     }
-    
+
     ,reverseForParent: function(parent, playerId) {
         this.checkLegalOption(parent, playerId);
         return new LosingMoveAndResults([parent], this.depth + 1);
     }
-    
+
 });
 
 
@@ -7236,20 +7236,20 @@ var LosingMoveAndResults = Class.create(BestMoveAndResults, {
     winnability: function() {
         return RESULT_LOSS;
     }
-    
+
     ,addTo: function(other) {
         return other.addToLoss(this);
     }
-    
+
     //addToWin: not needed because it's in the superclass
-    
+
     ,addToDunno: function(other) {
         return other; //other is better
     }
-    
+
     ,addToLoss: function(other) {
         if (this.depth > other.depth) {
-            //we can drag it on longer with this.  
+            //we can drag it on longer with this.
             return this;
         } else if (this.depth < other.depth) {
             return other;
@@ -7257,7 +7257,7 @@ var LosingMoveAndResults = Class.create(BestMoveAndResults, {
             return new LosingMoveAndResults(this.moves.concat(other.moves), this.depth);
         }
     }
-    
+
     ,reverseForParent: function(parent, playerId) {
         this.checkLegalOption(parent, playerId);
         return new WinningMoveAndResults([parent], this.depth + 1);
@@ -7269,11 +7269,11 @@ var UndecidedMoveAndResults = Class.create(BestMoveAndResults, {
    winnability: function() {
        return RESULT_DUNNO;
    }
-   
+
    ,addTo: function(other) {
        return other.addToDunno(this);
    }
-   
+
    ,addToDunno: function(other) {
        if (this.depth == other.depth) {
            //same depth, so use both
@@ -7286,7 +7286,7 @@ var UndecidedMoveAndResults = Class.create(BestMoveAndResults, {
            }
        }
     }
-    
+
     ,reverseForParent: function(parent, playerId) {
         this.checkLegalOption(parent, playerId);
         return new UndecidedMoveAndResults([parent], this.depth + 1);
@@ -7296,22 +7296,22 @@ var UndecidedMoveAndResults = Class.create(BestMoveAndResults, {
 
 //represents a BestMoveAndResults with no options
 var NullBestMoveAndResults = Class.create(LosingMoveAndResults, {
-    
+
    /**
     * Constructor.
     */
    initialize: function($super) {
         $super([], 0);
    }
-   
+
    ,checkLegalOption: function(parent, playerId) {
        //do nothing.  Nothing is a legal option.
    }
-    
+
     ,getMove: function() {
         console.log("Called getMove() on NullBestMoveAndResults!  Yikes!");
     }
-    
+
 });
 
 
@@ -7330,7 +7330,7 @@ var DepthSearchPlayer = Class.create(ComputerPlayer, {
         this.delayMilliseconds = delay;
         this.maxDepth = maxDepth;
     }
-    
+
     /**
      * Chooses a move.
      */
@@ -7348,7 +7348,7 @@ var DepthSearchPlayer = Class.create(ComputerPlayer, {
         var option = bestMoves.getMove();
         window.setTimeout(function(){referee.moveTo(option);}, this.delayMilliseconds);
     }
-    
+
     /**
      * Returns a BestMoveAndResults from the options of a position.
      * @param playerIndex index of current player
@@ -7371,7 +7371,7 @@ var DepthSearchPlayer = Class.create(ComputerPlayer, {
                 var nextOptions = this.getBestMovesFrom(1 - playerIndex, option, depth - 1);
                 var reversed = nextOptions.reverseForParent(option, 1 - playerIndex);
                 bestOptions = bestOptions.addTo(reversed);
-                
+
                 if (bestOptions.winnability() == 1) {
                     //we found a win.  Let's shortcut and return that instead of getting fancy.
                     return bestOptions;
@@ -7381,7 +7381,7 @@ var DepthSearchPlayer = Class.create(ComputerPlayer, {
             return bestOptions;
         }
     }
-    
+
 });
 
 /**
@@ -7505,12 +7505,17 @@ function createBasicOneDimensionalSizeOptions(minSize, maxSize, defaultSize, rul
     var rightRadio = getRadioPlayerOptions(CombinatorialGame.prototype.RIGHT);
     container.appendChild(createGameOptionDiv(rightName + ":", rightRadio));
 
+    var seedInput = document.createElement("input");
+    seedInput.type = "text"
+    seedInput.id = "seed";
+    container.appendChild(createGameOptionDiv("Seed", seedInput));
+
     var startButton = document.createElement("input");
     startButton.type = "button";
     startButton.id = "starter";
     startButton.value = "Start Game";
     startButton.style.fontSize = "large";
-    startButton.onclick = newGame;
+    startButton.onclick = startGame;
     container.appendChild(startButton);
     //end duplicated code.
 
@@ -7525,7 +7530,7 @@ function createBasicGridGameOptions(minWidth, maxWidth, defaultWidth, minHeight,
     minHeight = minHeight || minWidth;
     maxHeight = maxHeight || maxWidth;
     defaultHeight = defaultHeight || defaultWidth;
-    
+
     ruleset = ruleset || CombinatorialGame;
     var leftName = ruleset.prototype.PLAYER_NAMES[0];
     var rightName = ruleset.prototype.PLAYER_NAMES[1];
@@ -7550,13 +7555,20 @@ function createBasicGridGameOptions(minWidth, maxWidth, defaultWidth, minHeight,
     var rightRadio = getRadioPlayerOptions(CombinatorialGame.prototype.RIGHT);
     container.appendChild(createGameOptionDiv(rightName + ":", rightRadio));
 
+    var seedInput = document.createElement("input");
+    seedInput.type = "text"
+    seedInput.id = "seed";
+    container.appendChild(createGameOptionDiv("Seed", seedInput));
+
     var startButton = document.createElement("input");
     startButton.type = "button";
     startButton.id = "starter";
     startButton.value = "Start Game";
     startButton.style.fontSize = "large";
-    startButton.onclick = newGame;
+    startButton.onclick = startGame;
     container.appendChild(startButton);
+
+
 
     return container;
 }
@@ -7590,11 +7602,16 @@ function createBasicGridGameOptionsForNoCanDo(minWidth, maxWidth, defaultWidth, 
     var rightRadio = getRadioPlayerOptions(CombinatorialGame.prototype.RIGHT);
     container.appendChild(createGameOptionDiv("Horizontal:", rightRadio));
 
+    var seedInput = document.createElement("input");
+    seedInput.type = "text"
+    seedInput.id = "seed";
+    container.appendChild(createGameOptionDiv("Seed", seedInput));
+
     var startButton = document.createElement("input");
     startButton.type = "button";
     startButton.id = "starter";
     startButton.value = "Start Game";
-    startButton.onclick = newGame;
+    startButton.onclick = startGame;
     container.appendChild(startButton);
 
     return container;
@@ -7629,11 +7646,16 @@ function createBasicGridGameOptionsForConnectFour(minWidth, maxWidth, defaultWid
     var rightRadio = getRadioPlayerOptions(CombinatorialGame.prototype.RIGHT);
     container.appendChild(createGameOptionDiv("Red:", rightRadio));
 
+    var seedInput = document.createElement("input");
+    seedInput.type = "text"
+    seedInput.id = "seed";
+    container.appendChild(createGameOptionDiv("Seed", seedInput));
+
     var startButton = document.createElement("input");
     startButton.type = "button";
     startButton.id = "starter";
     startButton.value = "Start Game";
-    startButton.onclick = newGame;
+    startButton.onclick = startGame;
     container.appendChild(startButton);
 
     return container;
@@ -7668,11 +7690,16 @@ function createBasicGridGameOptionsForManalath(minWidth, maxWidth, defaultWidth,
     var rightRadio = getRadioPlayerOptions(CombinatorialGame.prototype.RIGHT);
     container.appendChild(createGameOptionDiv("Red:", rightRadio));
 
+    var seedInput = document.createElement("input");
+    seedInput.type = "text"
+    seedInput.id = "seed";
+    container.appendChild(createGameOptionDiv("Seed", seedInput));
+
     var startButton = document.createElement("input");
     startButton.type = "button";
     startButton.id = "starter";
     startButton.value = "Start Game";
-    startButton.onclick = newGame;
+    startButton.onclick = startGame;
     container.appendChild(startButton);
 
     return container;
@@ -7769,4 +7796,27 @@ function hideRules(event) {
     removeAllChildren($('rules'));
     event.target.onclick = showRules;
     event.target.innerHTML = "Show";
+}
+
+/**
+ *
+ */
+function startGame() {
+    const seedElement = $('seed');
+    const seed = seedElement.value;
+
+    // if there is a seed element and it has a value, decode the seed and then use it.
+    if (seed !== undefined && seed !== "") {
+        const decodedSeed = window.atob(seed);
+
+        Math.seedrandom(decodedSeed);
+    }
+    // else we just make a new seedrandom and give it to the user
+    else {
+        const rand = Math.seedrandom();
+        const encodedRand = window.btoa(rand);
+
+        seedElement.value = encodedRand;
+    }
+    newGame();
 }
